@@ -2,6 +2,13 @@
 
 A template repository for a C project.
 
+# File Structure
+
+- run_server.c
+- server.c (Oscar)
+- db.c (Rewa)
+- commands.c (Jack)
+
 # User Commands
 
 ## 📦 Commodity Trading CLI Commands
