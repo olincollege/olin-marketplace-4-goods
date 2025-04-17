@@ -10,6 +10,7 @@ typedef struct {
 
 typedef struct {
     int orderID;
+    int itemID;
     int buyOrSell; // 0 for buy, 1 for sell
     int quantity;
     int userID;
