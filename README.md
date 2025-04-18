@@ -2,6 +2,47 @@
 
 A template repository for a C project.
 
+# Database Structure
+
+`info.db` is the SQLite database that has 3 tables total as follows:
+
+## Table 1 - `users`
+
+Stores the inventories and info of all users.
+
+| Column   | Type    | Description                      |
+| -------- | ------- | -------------------------------- |
+| userID   | INTEGER | Primary key, auto-incremented    |
+| name     | TEXT    | Name of the user                 |
+| coin_OMG | INTEGER | Quantity of OMG coin (default 0) |
+| coin_A   | INTEGER | Quantity of Coin A (default 0)   |
+| coin_B   | INTEGER | Quantity of Coin B (default 0)   |
+| coin_C   | INTEGER | Quantity of Coin C (default 0)   |
+
+## Table 2 - `orders`
+
+Stores information about all active orders in the market.
+
+| Column    | Type    | Description                         |
+| --------- | ------- | ----------------------------------- |
+| orderID   | INTEGER | Primary key, auto-incremented       |
+| itemID    | INTEGER | ID of the item being bought or sold |
+| buyOrSell | INTEGER | 0 = buy, 1 = sell                   |
+| quantity  | INTEGER | Quantity of the item                |
+| userID    | INTEGER | ID of the user who placed the order |
+
+## Table 3 - `archives`
+
+Stores information about all archived orders in the archives.
+
+| Column    | Type    | Description                         |
+| --------- | ------- | ----------------------------------- |
+| orderID   | INTEGER | Primary key, auto-incremented       |
+| itemID    | INTEGER | ID of the item being bought or sold |
+| buyOrSell | INTEGER | 0 = buy, 1 = sell                   |
+| quantity  | INTEGER | Quantity of the item                |
+| userID    | INTEGER | ID of the user who placed the order |
+
 # File Structure
 
 - run_server.c
