@@ -38,10 +38,10 @@ int create_table(sqlite3* db) {
 }
 
 // Insert a user records into the inventory
-int insert_item(sqlite3* db, int id, int omg, int coin1, int coin2, int coin3) {
+int insert_user(sqlite3* db, int id, int omg, int coin1, int coin2, int coin3) {
   char sql[256];
   snprintf(sql, sizeof(sql),
-           "INSERT INTO inventory (id, omg, coin1, coin2, coin3) VALUES (%d, "
+           "INSERT INTO users (id, omg, coin1, coin2, coin3) VALUES (%d, "
            "%d, %d, %d, %d);",
            id, omg, coin1, coin2, coin3);
   return sqlite3_exec(db, sql, 0, 0, 0);
@@ -58,24 +58,24 @@ int select_callback(void* data, int argc, char** argv, char** col) {
 
 // Select all inventory
 int select_all(sqlite3* db) {
-  const char* sql = "SELECT * FROM inventory;";
+  const char* sql = "SELECT * FROM users;";
   return sqlite3_exec(db, sql, select_callback, 0, 0);
 }
 
 // Update inventory
-int update_item(sqlite3* db, int id, int omg, int coin1, int coin2, int coin3) {
+int update_user(sqlite3* db, int id, int omg, int coin1, int coin2, int coin3) {
   char sql[256];
   snprintf(sql, sizeof(sql),
-           "UPDATE inventory SET omg = %d, coin1 = %d, coin2 = %d, coin3 = %d "
+           "UPDATE users SET omg = %d, coin1 = %d, coin2 = %d, coin3 = %d "
            "WHERE id = %d;",
            omg, coin1, coin2, coin3, id);
   return sqlite3_exec(db, sql, 0, 0, 0);
 }
 
 // Delete user inventory
-int delete_item(sqlite3* db, int id) {
+int delete_user(sqlite3* db, int id) {
   char sql[128];
-  snprintf(sql, sizeof(sql), "DELETE FROM inventory WHERE id = %d;", id);
+  snprintf(sql, sizeof(sql), "DELETE FROM users WHERE id = %d;", id);
   return sqlite3_exec(db, sql, 0, 0, 0);
 }
 
