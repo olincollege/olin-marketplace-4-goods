@@ -1,3 +1,4 @@
+#pragma once
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,8 +16,15 @@ sqlite3* open_database(const char* filename) {
 }
 
 // Closes the database
-void close_database(sqlite3* db) {
-  if (db) sqlite3_close(db);
+int close_database(sqlite3* db) {
+  if (db) {
+    int rc = sqlite3_close(db);
+    if (rc != SQLITE_OK) {
+      fprintf(stderr, "Error closing database: %s\n", sqlite3_errstr(rc));
+      return -1;
+    }
+  }
+  return SQLITE_OK;
 }
 
 // Creates a basic table for the inventory
