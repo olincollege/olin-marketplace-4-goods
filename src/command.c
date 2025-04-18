@@ -1,36 +1,41 @@
 // TODO: discuss if we need structs for inventories and stuff
-#include "db.h"
+#include <sqlite3.h>
+
+#include "db.c"
+
+typedef enum { BUY = 0, SELL = 1 } TransactionType;
 
 typedef struct {
-  int itemID;
+  int userID;
   char* name;
-  int price;
-  int quantity;
-} item;
+  int OMG;
+  int DOGE;
+  int BTC;
+  int ETH;
+} user;
 
 typedef struct {
   int orderID;
-  int itemID;
+  int item;
   int buyOrSell;  // 0 for buy, 1 for sell
   int quantity;
   int userID;
+  char* created_at;  // Timestamp for when the order was created
 } order;
 
 // change to return struct item??
-item* myInventory() {}
+int* myInventory() {}
 
 // return -1 if unsuccessful
-int buy(int itemID, int unitPrice, int quantity, int userID) {}
+int buy(sqlite3* db, order* ord) { return insert_order(db, ord); }
 
 // return -1 if unsuccessful
-int sell(int itemID, int unitPrice, int quantity, int userID) {}
+int sell(sqlite3* db, order* ord) { return insert_order(db, ord); }
 
 // change to return struct orders??
-order* myOrders(int* orderCount) {
-  static order orders[100];  // Example: static array to hold orders
-  *orderCount = 0;           // Initialize order count
-  // depends on how many orders from database
-  return orders;
+void myOrders(order* orderList, int* orderCount) {
+  // TODO: store stuff in orderList as they are allocated outside in the
+  // server.c
 }
 
 // change to return struct orders??

@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "command.c"
+
 // Opens a database for use
 sqlite3* open_database(const char* filename) {
   sqlite3* db;
@@ -74,5 +76,15 @@ int update_item(sqlite3* db, int id, int omg, int coin1, int coin2, int coin3) {
 int delete_item(sqlite3* db, int id) {
   char sql[128];
   snprintf(sql, sizeof(sql), "DELETE FROM inventory WHERE id = %d;", id);
+  return sqlite3_exec(db, sql, 0, 0, 0);
+}
+
+int insert_order(sqlite3* db, order* new_order) {
+  char sql[256];
+  snprintf(sql, sizeof(sql),
+           "INSERT INTO orders (item, buyOrSell, quantity, unitPrice, userID) "
+           "VALUES (%d, %d, %d, %.2f, %d);",
+           new_order->item, new_order->buyOrSell, new_order->quantity,
+           new_order->unitPrice, new_order->userID);
   return sqlite3_exec(db, sql, 0, 0, 0);
 }
