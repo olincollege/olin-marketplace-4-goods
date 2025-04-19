@@ -2,16 +2,9 @@
 
 #include "../src/command.h"
 
-Test(sample_test_suite, sample_test_case) {
-  int a = 5;
-  int b = 5;
-
-  cr_assert(a == b, "Expected %d to be equal to %d", a, b);
-}
-
 Test(test_command_db, test_open_db) {
-  sqlite3* db = NULL;
-  int rc = open_db(&db);
-  cr_assert_eq(rc, 0, "Expected open_db to return 0, but got %d", rc);
-  close_db(db);
+  sqlite3* database = NULL;
+  int res = open_db(&database);
+  cr_assert_eq(res, 0, "Expected open_db to return 0, but got %d", res);
+  close_db(database);
 }
