@@ -56,10 +56,8 @@ int free_order(order* ord) {
   return 0;  // Return 0 on successful free
 }
 
-// return -1 if unsuccessful
 int buy(sqlite3* database, order* ord) { return insert_order(database, ord); }
 
-// return -1 if unsuccessful
 int sell(sqlite3* database, order* ord) { return insert_order(database, ord); }
 
 void myOrders(sqlite3* database, int userID, order** orderList,

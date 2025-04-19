@@ -20,9 +20,9 @@ sqlite3* open_database(void) {
 // Closes the database
 int close_database(sqlite3* database) {
   if (database) {
-    int rc = sqlite3_close(database);
-    if (rc != SQLITE_OK) {
-      fprintf(stderr, "Error closing database: %s\n", sqlite3_errstr(rc));
+    int res = sqlite3_close(database);
+    if (res != SQLITE_OK) {
+      fprintf(stderr, "Error closing database: %s\n", sqlite3_errstr(res));
       return -1;
     }
   }
@@ -71,12 +71,37 @@ int create_tables(sqlite3* database) {
   return SQLITE_OK;
 }
 
+int drop_all_tables(sqlite3* database) {
+  char* errMsg = 0;
+  const char* sql =
+      "PRAGMA foreign_keys = OFF;"  // Temporarily disable FK constraints
+      "BEGIN TRANSACTION;"
+      "DROP TABLE IF EXISTS users;"
+      "DROP TABLE IF EXISTS orders;"
+      "DROP TABLE IF EXISTS archives;"
+      "COMMIT;"
+      "PRAGMA foreign_keys = ON;";
+
+  int res = sqlite3_exec(database, sql, 0, 0, &errMsg);
+  if (res != SQLITE_OK) {
+    if (errMsg) {
+      fprintf(stderr, "Error dropping tables: %s\n", errMsg);
+      sqlite3_free(errMsg);
+    } else {
+      fprintf(stderr, "Error dropping tables: Unknown error\n");
+    }
+    return SQLITE_ERROR;
+  }
+
+  return SQLITE_OK;
+}
+
 int insert_order(sqlite3* database, order* new_order) {
   const char* sql =
       "INSERT INTO orders (item, buyOrSell, quantity, unitPrice, userID) "
       "VALUES (?, ?, ?, ?, ?);";
 
-  sqlite3_stmt* stmt;
+  sqlite3_stmt* stmt = NULL;
   int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
   if (res != SQLITE_OK) {
     fprintf(stderr, "Failed to prepare statement: %s\n",
@@ -96,62 +121,6 @@ int insert_order(sqlite3* database, order* new_order) {
             sqlite3_errmsg(database));
     sqlite3_finalize(stmt);
     return res;
-  }
-
-  sqlite3_finalize(stmt);
-  return SQLITE_OK;
-}
-
-int drop_all_tables(sqlite3* database) {
-  char* errMsg = 0;
-  const char* sql =
-      "PRAGMA foreign_keys = OFF;"  // Temporarily disable FK constraints
-      "BEGIN TRANSACTION;"
-      "DROP TABLE IF EXISTS users;"
-      "DROP TABLE IF EXISTS orders;"
-      "DROP TABLE IF EXISTS archives;"
-      "COMMIT;"
-      "PRAGMA foreign_keys = ON;";
-
-  int rc = sqlite3_exec(database, sql, 0, 0, &errMsg);
-  if (rc != SQLITE_OK) {
-    if (errMsg) {
-      fprintf(stderr, "Error dropping tables: %s\n", errMsg);
-      sqlite3_free(errMsg);
-    } else {
-      fprintf(stderr, "Error dropping tables: Unknown error\n");
-    }
-    return SQLITE_ERROR;
-  }
-
-  return SQLITE_OK;
-}
-
-int insert_order(sqlite3* database, order* new_order) {
-  const char* sql =
-      "INSERT INTO orders (item, buyOrSell, quantity, unitPrice, userID) "
-      "VALUES (?, ?, ?, ?, ?);";
-
-  sqlite3_stmt* stmt;
-  int rc = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "Failed to prepare statement: %s\n",
-            sqlite3_errmsg(database));
-    return rc;
-  }
-
-  sqlite3_bind_int(stmt, 1, new_order->item);
-  sqlite3_bind_int(stmt, 2, new_order->buyOrSell);
-  sqlite3_bind_int(stmt, 3, new_order->quantity);
-  sqlite3_bind_double(stmt, 4, new_order->unitPrice);
-  sqlite3_bind_int(stmt, 5, new_order->userID);
-
-  rc = sqlite3_step(stmt);
-  if (rc != SQLITE_DONE) {
-    fprintf(stderr, "Failed to execute statement: %s\n",
-            sqlite3_errmsg(database));
-    sqlite3_finalize(stmt);
-    return rc;
   }
 
   sqlite3_finalize(stmt);

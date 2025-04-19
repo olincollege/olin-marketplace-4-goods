@@ -80,3 +80,59 @@ Test(test_db, test_create_tables_function) {
 
   close_database(database);
 }
+
+Test(test_orders, test_insert_order) {
+  // Open database
+  sqlite3* database = open_database();
+  cr_assert_not_null(database, "Database connection should not be NULL");
+
+  // Reset tables
+  drop_all_tables(database);
+  create_tables(database);
+
+  // Create a mock order
+  order new_order = {
+      .item = COIN_BTC,
+      .buyOrSell = BUY,
+      .quantity = 10,
+      .unitPrice = 100.50,
+      .userID = 1,
+  };
+
+  // Insert a user to satisfy the foreign key constraint
+  const char* insert_user_sql =
+      "INSERT INTO users (name) VALUES ('Test User');";
+  char* errMsg = NULL;
+  int res = sqlite3_exec(database, insert_user_sql, NULL, NULL, &errMsg);
+  cr_assert_eq(res, SQLITE_OK, "Failed to insert user: %s", errMsg);
+  sqlite3_free(errMsg);
+
+  // Call the function being tested
+  res = insert_order(database, &new_order);
+  cr_assert_eq(res, SQLITE_OK, "insert_order failed: %d", res);
+
+  // Verify the order was inserted
+  const char* verify_sql =
+      "SELECT item, buyOrSell, quantity, unitPrice, userID FROM orders;";
+  sqlite3_stmt* stmt = NULL;
+  res = sqlite3_prepare_v2(database, verify_sql, -1, &stmt, NULL);
+  cr_assert_eq(res, SQLITE_OK, "Failed to prepare verification statement: %s",
+               sqlite3_errmsg(database));
+
+  res = sqlite3_step(stmt);
+  cr_assert_eq(res, SQLITE_ROW, "No order was inserted into the database.");
+
+  cr_assert_eq(sqlite3_column_int(stmt, 0), new_order.item,
+               "Inserted item does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 1), new_order.buyOrSell,
+               "Inserted buyOrSell does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 2), new_order.quantity,
+               "Inserted quantity does not match.");
+  cr_assert_float_eq(sqlite3_column_double(stmt, 3), new_order.unitPrice, 0.001,
+                     "Inserted unitPrice does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 4), new_order.userID,
+               "Inserted userID does not match.");
+
+  sqlite3_finalize(stmt);
+  close_database(database);
+}

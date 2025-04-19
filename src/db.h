@@ -124,26 +124,6 @@ int close_database(sqlite3* database);
 int create_tables(sqlite3* database);
 
 /**
- * @brief Inserts a new order into the "orders" table in the SQLite database.
- *
- * This function constructs an SQL INSERT statement using the details of the
- * provided `order` structure and executes it on the given SQLite database.
- *
- * @param database A pointer to the SQLite database connection.
- * @param new_order A pointer to the `order` structure containing the details
- *                  of the order to be inserted. The structure should include:
- *                  - item: The item ID.
- *                  - buyOrSell: Indicator of buy (e.g., 1) or sell (e.g., 0).
- *                  - quantity: The quantity of the item.
- *                  - unitPrice: The price per unit of the item.
- *                  - userID: The ID of the user placing the order.
- *
- * @return Returns `SQLITE_OK` (0) on success. On failure, it returns an SQLite
- *         error code and frees any allocated error message.
- */
-int insert_order(sqlite3* database, order* new_order);
-
-/**
  * @brief Drops all tables from the given SQLite database.
  *
  * This function disables foreign key constraints temporarily, begins a
@@ -161,3 +141,29 @@ int insert_order(sqlite3* database, order* new_order);
  * function is called only when the data in the tables is no longer needed.
  */
 int drop_all_tables(sqlite3* database);
+
+/**
+ * @brief Inserts a new order into the "orders" table in the SQLite database.
+ *
+ * This function prepares an SQL INSERT statement to add a new order to the
+ * "orders" table. It binds the values from the provided `order` structure
+ * to the SQL statement and executes it.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param new_order A pointer to the `order` structure containing the details
+ *                  of the order to be inserted. The structure should include:
+ *                  - item: The type of cryptocurrency being traded.
+ *                  - buyOrSell: Indicator of buy (0) or sell (1).
+ *                  - quantity: The quantity of the cryptocurrency.
+ *                  - unitPrice: The price per unit of the cryptocurrency.
+ *                  - userID: The ID of the user placing the order.
+ *
+ * @return Returns `SQLITE_OK` (0) on success. On failure, it returns an SQLite
+ *         error code and logs the error message to stderr.
+ *
+ * @note Ensure that the database connection is valid and open before calling
+ *       this function.
+ * @warning This function does not validate the input data. Ensure that the
+ *          `new_order` structure contains valid values.
+ */
+int insert_order(sqlite3* database, order* new_order);
