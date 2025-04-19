@@ -148,3 +148,22 @@ int create_tables(sqlite3* database);
  *         error code and frees any allocated error message.
  */
 int insert_order(sqlite3* database, order* new_order);
+
+/**
+ * @brief Drops all tables from the given SQLite database.
+ *
+ * This function disables foreign key constraints temporarily, begins a
+ * transaction, and drops the `users`, `orders`, and `archives` tables if they
+ * exist. After the operation, it re-enables foreign key constraints.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @return SQLITE_OK on success, or SQLITE_ERROR if an error occurs during the
+ * operation.
+ *
+ * @note This function assumes the database connection is valid and open.
+ *       Ensure that no other operations are being performed on the database
+ *       while this function is executed.
+ * @warning Dropping tables is a destructive operation. Ensure that this
+ * function is called only when the data in the tables is no longer needed.
+ */
+int drop_all_tables(sqlite3* database);

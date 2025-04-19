@@ -10,6 +10,10 @@ sqlite3* open_database(void) {
     fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(database));
     return NULL;
   }
+  // Set busy timeout to 1000 milliseconds (1 second)
+  // if the db is locked/busy when accessed, this will make the process retry
+  // for 1 sec
+  sqlite3_busy_timeout(database, 1000);
   return database;
 }
 
@@ -27,16 +31,15 @@ int close_database(sqlite3* database) {
 
 // Creates the required tables for the database
 int create_tables(sqlite3* database) {
-  const char* users_table_sql =
+  const char* create_tables_sql =
       "CREATE TABLE IF NOT EXISTS users ("
       "userID INTEGER PRIMARY KEY AUTOINCREMENT, "
       "name TEXT NOT NULL, "
       "OMG INTEGER DEFAULT 0, "
       "DOGE INTEGER DEFAULT 0, "
       "BTC INTEGER DEFAULT 0, "
-      "ETH INTEGER DEFAULT 0);";
+      "ETH INTEGER DEFAULT 0);"
 
-  const char* orders_table_sql =
       "CREATE TABLE IF NOT EXISTS orders ("
       "orderID INTEGER PRIMARY KEY AUTOINCREMENT, "
       "item INTEGER NOT NULL, "
@@ -45,9 +48,8 @@ int create_tables(sqlite3* database) {
       "unitPrice REAL NOT NULL, "
       "userID INTEGER NOT NULL, "
       "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
-      "FOREIGN KEY(userID) REFERENCES users(userID));";
+      "FOREIGN KEY(userID) REFERENCES users(userID));"
 
-  const char* archives_table_sql =
       "CREATE TABLE IF NOT EXISTS archives ("
       "orderID INTEGER PRIMARY KEY AUTOINCREMENT, "
       "item INTEGER NOT NULL, "
@@ -59,27 +61,11 @@ int create_tables(sqlite3* database) {
       "FOREIGN KEY(userID) REFERENCES users(userID));";
 
   char* errMsg = 0;
-  int rc;
-
-  rc = sqlite3_exec(database, users_table_sql, 0, 0, &errMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "Error creating users table: %s\n", errMsg);
+  int res = sqlite3_exec(database, create_tables_sql, 0, 0, &errMsg);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Error creating tables: %s\n", errMsg);
     sqlite3_free(errMsg);
-    return rc;
-  }
-
-  rc = sqlite3_exec(database, orders_table_sql, 0, 0, &errMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "Error creating orders table: %s\n", errMsg);
-    sqlite3_free(errMsg);
-    return rc;
-  }
-
-  rc = sqlite3_exec(database, archives_table_sql, 0, 0, &errMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "Error creating archives table: %s\n", errMsg);
-    sqlite3_free(errMsg);
-    return rc;
+    return res;
   }
 
   return SQLITE_OK;
@@ -104,6 +90,31 @@ int insert_order(sqlite3* database, order* new_order) {
   if (res != SQLITE_OK) {
     sqlite3_free(errMsg);
     return res;
+  }
+
+  return SQLITE_OK;
+}
+
+int drop_all_tables(sqlite3* database) {
+  char* errMsg = 0;
+  const char* sql =
+      "PRAGMA foreign_keys = OFF;"  // Temporarily disable FK constraints
+      "BEGIN TRANSACTION;"
+      "DROP TABLE IF EXISTS users;"
+      "DROP TABLE IF EXISTS orders;"
+      "DROP TABLE IF EXISTS archives;"
+      "COMMIT;"
+      "PRAGMA foreign_keys = ON;";
+
+  int rc = sqlite3_exec(database, sql, 0, 0, &errMsg);
+  if (rc != SQLITE_OK) {
+    if (errMsg) {
+      fprintf(stderr, "Error dropping tables: %s\n", errMsg);
+      sqlite3_free(errMsg);
+    } else {
+      fprintf(stderr, "Error dropping tables: Unknown error\n");
+    }
+    return SQLITE_ERROR;
   }
 
   return SQLITE_OK;
