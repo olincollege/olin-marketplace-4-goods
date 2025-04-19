@@ -167,3 +167,20 @@ int drop_all_tables(sqlite3* database);
  *          `new_order` structure contains valid values.
  */
 int insert_order(sqlite3* database, order* new_order);
+
+/**
+ * @brief Prints the contents of specific tables from a SQLite database.
+ *
+ * Iterates through predefined SQL queries for "users", "orders", and "archives"
+ * tables, executes them, and displays the results in a tabular format.
+ *
+ * @param database Pointer to an open SQLite database connection.
+ *
+ * Handles:
+ * - INTEGER, FLOAT, TEXT, and NULL data types.
+ * - Errors during query preparation or execution.
+ *
+ * Assumes:
+ * - The database connection is valid and tables exist.
+ */
+void dump_database(sqlite3* database);

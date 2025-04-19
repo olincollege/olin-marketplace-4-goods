@@ -13,6 +13,15 @@ int open_db(sqlite3** database) {
 }
 
 int init_db(sqlite3* database) {
+  if (drop_all_tables(database) != 0) {
+    fprintf(stderr, "Error: Failed to drop all tables.\n");
+    if (close_database(database) != 0) {
+      fprintf(
+          stderr,
+          "Error: Failed to close the database after table drop failure.\n");
+    }
+    return -1;  // Return -1 on failure to drop tables
+  }
   if (create_tables(database) != 0) {
     if (close_database(database) != 0) {
       fprintf(stderr,

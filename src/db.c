@@ -126,3 +126,56 @@ int insert_order(sqlite3* database, order* new_order) {
   sqlite3_finalize(stmt);
   return SQLITE_OK;
 }
+
+void dump_database(sqlite3* database) {
+  const char* queries[] = {"SELECT * FROM users;", "SELECT * FROM orders;",
+                           "SELECT * FROM archives;"};
+  const char* table_names[] = {"Users", "Orders", "Archives"};
+
+  for (int i = 0; i < 3; i++) {
+    printf("Table: %s\n", table_names[i]);
+    sqlite3_stmt* stmt = NULL;
+    int res = sqlite3_prepare_v2(database, queries[i], -1, &stmt, NULL);
+    if (res != SQLITE_OK) {
+      fprintf(stderr, "Failed to prepare statement for table %s: %s\n",
+              table_names[i], sqlite3_errmsg(database));
+      continue;
+    }
+
+    int column_count = sqlite3_column_count(stmt);
+    for (int col = 0; col < column_count; col++) {
+      printf("%s\t", sqlite3_column_name(stmt, col));
+    }
+    printf("\n");
+
+    while ((res = sqlite3_step(stmt)) == SQLITE_ROW) {
+      for (int col = 0; col < column_count; col++) {
+        switch (sqlite3_column_type(stmt, col)) {
+          case SQLITE_INTEGER:
+            printf("%d\t", sqlite3_column_int(stmt, col));
+            break;
+          case SQLITE_FLOAT:
+            printf("%f\t", sqlite3_column_double(stmt, col));
+            break;
+          case SQLITE_TEXT:
+            printf("%s\t", sqlite3_column_text(stmt, col));
+            break;
+          case SQLITE_NULL:
+            printf("NULL\t");
+            break;
+          default:
+            printf("?\t");
+        }
+      }
+      printf("\n");
+    }
+
+    if (res != SQLITE_DONE) {
+      fprintf(stderr, "Error stepping through table %s: %s\n", table_names[i],
+              sqlite3_errmsg(database));
+    }
+
+    sqlite3_finalize(stmt);
+    printf("\n");
+  }
+}
