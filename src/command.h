@@ -39,6 +39,36 @@ int init_db(sqlite3* database);
 int close_db(sqlite3* database);
 
 /**
+ * @brief Creates a new order with the specified parameters.
+ *
+ * This function allocates memory for a new order and initializes its fields
+ * with the provided values. If memory allocation fails, it returns NULL.
+ *
+ * @param item The item identifier for the order.
+ * @param buyOrSell Indicates whether the order is a buy (1) or sell (0) order.
+ * @param quantity The quantity of the item in the order.
+ * @param unitPrice The price per unit of the item.
+ * @param userID The identifier of the user creating the order.
+ * @return A pointer to the newly created order, or NULL if memory allocation
+ * fails.
+ */
+order* create_order(int item, int buyOrSell, int quantity, double unitPrice,
+                    int userID);
+
+/**
+ * @brief Frees the memory allocated for an order.
+ *
+ * This function deallocates the memory associated with the given order. If the
+ * provided order pointer is NULL, it returns -1 to indicate an error.
+ * Otherwise, it frees the memory and returns 0 to indicate success.
+ *
+ * @param ord A pointer to the order to be freed.
+ * @return 0 if the order was successfully freed, or -1 if the order pointer is
+ * NULL.
+ */
+int free_order(order* ord);
+
+/**
  * @brief Retrieves the inventory of a user.
  *
  * @param userID The ID of the user.

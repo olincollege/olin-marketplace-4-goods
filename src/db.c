@@ -85,14 +85,13 @@ int create_tables(sqlite3* database) {
   return SQLITE_OK;
 }
 
-// Insert a user records into the inventory
-int insert_item(sqlite3* database, int id, int omg, int coin1, int coin2,
-                int coin3) {
+int insert_order(sqlite3* database, order* new_order) {
   char sql[256];
   snprintf(sql, sizeof(sql),
-           "INSERT INTO inventory (id, omg, coin1, coin2, coin3) VALUES (%d, "
-           "%d, %d, %d, %d);",
-           id, omg, coin1, coin2, coin3);
+           "INSERT INTO orders (item, buyOrSell, quantity, unitPrice, userID) "
+           "VALUES (%d, %d, %d, %.2f, %d);",
+           new_order->item, new_order->buyOrSell, new_order->quantity,
+           new_order->unitPrice, new_order->userID);
   return sqlite3_exec(database, sql, 0, 0, 0);
 }
 
@@ -126,16 +125,6 @@ int update_item(sqlite3* database, int id, int omg, int coin1, int coin2,
 int delete_item(sqlite3* database, int id) {
   char sql[128];
   snprintf(sql, sizeof(sql), "DELETE FROM inventory WHERE id = %d;", id);
-  return sqlite3_exec(database, sql, 0, 0, 0);
-}
-
-int insert_order(sqlite3* database, order* new_order) {
-  char sql[256];
-  snprintf(sql, sizeof(sql),
-           "INSERT INTO orders (item, buyOrSell, quantity, unitPrice, userID) "
-           "VALUES (%d, %d, %d, %.2f, %d);",
-           new_order->item, new_order->buyOrSell, new_order->quantity,
-           new_order->unitPrice, new_order->userID);
   return sqlite3_exec(database, sql, 0, 0, 0);
 }
 

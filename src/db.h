@@ -90,6 +90,12 @@ typedef struct {
 } order;
 
 /**
+ * @def SQLITE_BUFFER_SIZE
+ * @brief Defines the fixed size for SQLite query buffers.
+ */
+#define SQLITE_BUFFER_SIZE 1024
+
+/**
  * @def database_FILENAME
  * @brief Default filename for the SQLite database.
  */
