@@ -112,12 +112,17 @@ sqlite3* open_database(const char* filename);
 int close_database(sqlite3* database);
 
 /**
- * @brief Creates a basic table for the inventory in the database.
+ * @brief Creates the required tables for the database.
+ *
+ * This function creates the following tables if they do not already exist:
+ * - users: Stores user information and their cryptocurrency inventory.
+ * - orders: Stores active orders for buying or selling cryptocurrency.
+ * - archives: Stores archived orders for historical purposes.
  *
  * @param database A pointer to the SQLite3 database.
  * @return SQLITE_OK on success, or an error code on failure.
  */
-int create_table(sqlite3* database);
+int create_tables(sqlite3* database);
 
 /**
  * @brief Inserts an item record into the inventory table.

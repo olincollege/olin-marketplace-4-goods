@@ -25,22 +25,64 @@ int close_database(sqlite3* database) {
   return SQLITE_OK;
 }
 
-// Creates a basic table for the inventory
-int create_table(sqlite3* database) {
-  const char* sql =
-      "CREATE TABLE IF NOT EXISTS inventory ("
-      "id,"
-      "omg,"
-      "coin1"
-      "coin2"
-      "coin3);";
+// Creates the required tables for the database
+int create_tables(sqlite3* database) {
+  const char* users_table_sql =
+      "CREATE TABLE IF NOT EXISTS users ("
+      "userID INTEGER PRIMARY KEY AUTOINCREMENT, "
+      "name TEXT NOT NULL, "
+      "OMG INTEGER DEFAULT 0, "
+      "DOGE INTEGER DEFAULT 0, "
+      "BTC INTEGER DEFAULT 0, "
+      "ETH INTEGER DEFAULT 0);";
+
+  const char* orders_table_sql =
+      "CREATE TABLE IF NOT EXISTS orders ("
+      "orderID INTEGER PRIMARY KEY AUTOINCREMENT, "
+      "item INTEGER NOT NULL, "
+      "buyOrSell INTEGER NOT NULL, "
+      "quantity INTEGER NOT NULL, "
+      "unitPrice REAL NOT NULL, "
+      "userID INTEGER NOT NULL, "
+      "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+      "FOREIGN KEY(userID) REFERENCES users(userID));";
+
+  const char* archives_table_sql =
+      "CREATE TABLE IF NOT EXISTS archives ("
+      "orderID INTEGER PRIMARY KEY AUTOINCREMENT, "
+      "item INTEGER NOT NULL, "
+      "buyOrSell INTEGER NOT NULL, "
+      "quantity INTEGER NOT NULL, "
+      "unitPrice REAL NOT NULL, "
+      "userID INTEGER NOT NULL, "
+      "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+      "FOREIGN KEY(userID) REFERENCES users(userID));";
+
   char* errMsg = 0;
-  int rc = sqlite3_exec(database, sql, 0, 0, &errMsg);
+  int rc;
+
+  rc = sqlite3_exec(database, users_table_sql, 0, 0, &errMsg);
   if (rc != SQLITE_OK) {
-    fprintf(stderr, "Create table error: %s\n", errMsg);
+    fprintf(stderr, "Error creating users table: %s\n", errMsg);
     sqlite3_free(errMsg);
+    return rc;
   }
-  return rc;
+
+  rc = sqlite3_exec(database, orders_table_sql, 0, 0, &errMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "Error creating orders table: %s\n", errMsg);
+    sqlite3_free(errMsg);
+    return rc;
+  }
+
+  rc = sqlite3_exec(database, archives_table_sql, 0, 0, &errMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "Error creating archives table: %s\n", errMsg);
+    sqlite3_free(errMsg);
+    return rc;
+  }
+
+  return SQLITE_OK;
 }
 
 // Insert a user records into the inventory
