@@ -1,5 +1,12 @@
 {
   "files.associations": {
-    "sqlite3.h": "c"
+    "sqlite3.h": "c",
+    "db.h": "c",
+    "cstdlib": "c",
+    "util.h": "c",
+    "stdio.h": "c",
+    "stdlib.h": "c",
+    "typeinfo": "c",
+    "command.h": "c"
   }
 }

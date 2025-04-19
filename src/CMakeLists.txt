@@ -11,3 +11,9 @@ target_link_libraries(server PRIVATE util)
 
 add_executable(run_server run_server.c)
 target_link_libraries(run_server PRIVATE server util)
+
+add_library(db db.c db.h)
+target_link_libraries(db PRIVATE util)
+
+add_library(command command.c command.h)
+target_link_libraries(command PRIVATE util db)
