@@ -72,26 +72,33 @@ int create_tables(sqlite3* database) {
 }
 
 int insert_order(sqlite3* database, order* new_order) {
-  char sql[SQLITE_BUFFER_SIZE];
-  int snprintf_res = snprintf(
-      sql, sizeof(sql),
+  const char* sql =
       "INSERT INTO orders (item, buyOrSell, quantity, unitPrice, userID) "
-      "VALUES (%d, %d, %d, %.2f, %d);",
-      new_order->item, new_order->buyOrSell, new_order->quantity,
-      new_order->unitPrice, new_order->userID);
+      "VALUES (?, ?, ?, ?, ?);";
 
-  if (snprintf_res < 0 || snprintf_res >= sizeof(sql)) {
-    fprintf(stderr, "Error formatting SQL query or buffer overflow\n");
-    return SQLITE_ERROR;
-  }
-
-  char* errMsg = 0;
-  int res = sqlite3_exec(database, sql, 0, 0, &errMsg);
+  sqlite3_stmt* stmt;
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
   if (res != SQLITE_OK) {
-    sqlite3_free(errMsg);
+    fprintf(stderr, "Failed to prepare statement: %s\n",
+            sqlite3_errmsg(database));
     return res;
   }
 
+  sqlite3_bind_int(stmt, 1, new_order->item);
+  sqlite3_bind_int(stmt, 2, new_order->buyOrSell);
+  sqlite3_bind_int(stmt, 3, new_order->quantity);
+  sqlite3_bind_double(stmt, 4, new_order->unitPrice);
+  sqlite3_bind_int(stmt, 5, new_order->userID);
+
+  res = sqlite3_step(stmt);
+  if (res != SQLITE_DONE) {
+    fprintf(stderr, "Failed to execute statement: %s\n",
+            sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return res;
+  }
+
+  sqlite3_finalize(stmt);
   return SQLITE_OK;
 }
 
@@ -117,5 +124,36 @@ int drop_all_tables(sqlite3* database) {
     return SQLITE_ERROR;
   }
 
+  return SQLITE_OK;
+}
+
+int insert_order(sqlite3* database, order* new_order) {
+  const char* sql =
+      "INSERT INTO orders (item, buyOrSell, quantity, unitPrice, userID) "
+      "VALUES (?, ?, ?, ?, ?);";
+
+  sqlite3_stmt* stmt;
+  int rc = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "Failed to prepare statement: %s\n",
+            sqlite3_errmsg(database));
+    return rc;
+  }
+
+  sqlite3_bind_int(stmt, 1, new_order->item);
+  sqlite3_bind_int(stmt, 2, new_order->buyOrSell);
+  sqlite3_bind_int(stmt, 3, new_order->quantity);
+  sqlite3_bind_double(stmt, 4, new_order->unitPrice);
+  sqlite3_bind_int(stmt, 5, new_order->userID);
+
+  rc = sqlite3_step(stmt);
+  if (rc != SQLITE_DONE) {
+    fprintf(stderr, "Failed to execute statement: %s\n",
+            sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return rc;
+  }
+
+  sqlite3_finalize(stmt);
   return SQLITE_OK;
 }
