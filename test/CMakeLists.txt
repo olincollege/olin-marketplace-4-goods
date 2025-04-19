@@ -15,3 +15,13 @@ add_test(
     NAME test_command
     COMMAND test_command ${CRITERION_FLAGS}
 )
+
+add_executable(test_db test_db.c)
+target_link_libraries(test_db
+    PRIVATE db
+    PUBLIC ${CRITERION}
+)
+add_test(
+    NAME test_db
+    COMMAND test_db ${CRITERION_FLAGS}
+)

@@ -13,7 +13,7 @@ The following coins can be traded in the marketplace:
 
 # Database Structure
 
-`info.db` is the SQLite database that has 3 tables total as follows:
+`database.db` is the default SQLite database file name that has 3 tables total as follows:
 
 ## Table 1 - `users`
 
