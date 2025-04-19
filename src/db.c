@@ -4,9 +4,9 @@
 #include <stdlib.h>
 
 // Opens a database for use
-sqlite3* open_database(const char* filename) {
-  sqlite3* database;
-  if (sqlite3_open(filename, &database) != SQLITE_OK) {
+sqlite3* open_database(void) {
+  sqlite3* database = NULL;
+  if (sqlite3_open(FILENAME, &database) != SQLITE_OK) {
     fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(database));
     return NULL;
   }

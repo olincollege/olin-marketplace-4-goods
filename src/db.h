@@ -93,15 +93,14 @@ typedef struct {
  * @def database_FILENAME
  * @brief Default filename for the SQLite database.
  */
-#define database_FILENAME "database.database"
+#define FILENAME "database.db"
 
 /**
  * @brief Opens a SQLite3 database for use.
  *
- * @param filename The name of the database file to open.
- * @return A pointer to the opened SQLite3 database, or NULL on failure.
+ * @return SQLITE_OK on success, or an error code on failure.
  */
-sqlite3* open_database(const char* filename);
+sqlite3* open_database(void);
 
 /**
  * @brief Closes the SQLite3 database.

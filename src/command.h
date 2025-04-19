@@ -4,12 +4,31 @@
 #include "util.h"
 
 /**
- * @brief Initializes the database connection.
+ * @brief Opens a SQLite database connection.
  *
- * @param database Pointer to the SQLite database connection.
- * @return 0 on success, or exits the program on failure.
+ * This function initializes a SQLite database connection and assigns it to
+ * the provided pointer. If the database cannot be opened, it returns an error
+ * code.
+ *
+ * @param[out] database A pointer to a pointer of type `sqlite3` where the
+ * database connection will be stored.
+ * @return int Returns 0 on success, or -1 if the database connection could not
+ * be opened.
  */
-int init_db(sqlite3** database);
+int open_db(sqlite3** database);
+
+/**
+ * @brief Initializes the SQLite database by creating necessary tables.
+ *
+ * This function creates the required tables in the provided SQLite database.
+ * If table creation fails, it attempts to close the database and returns an
+ * error code.
+ *
+ * @param[in] database A pointer to an open SQLite database connection.
+ * @return int Returns 0 on success, or -1 if table creation fails or if the
+ * database could not be closed properly after a failure.
+ */
+int init_db(sqlite3* database);
 
 /**
  * @brief Closes the database connection.

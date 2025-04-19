@@ -1,9 +1,28 @@
 #include "command.h"
 
 #include <sqlite3.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-int init_db(sqlite3** database) {
-  *database = open_database(database_FILENAME);
+int open_db(sqlite3** database) {
+  *database = open_database();
+  if (*database == NULL) {
+    return -1;  // Return -1 if database opening fails
+  }
+  return 0;  // Return 0 on success
+}
+
+int init_db(sqlite3* database) {
+  if (create_tables(database) != 0) {
+    if (close_database(database) != 0) {
+      fprintf(stderr,
+              "Error: Failed to close the database after table creation "
+              "failure.\n");
+      return -1;
+    };  // Clean up if table creation fails
+    return -1;  // Return -1 on failure to create tables
+  }
+
   return 0;  // Return 0 on success
 }
 
