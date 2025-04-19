@@ -130,69 +130,21 @@ int close_database(sqlite3* database);
 int create_tables(sqlite3* database);
 
 /**
- * @brief Inserts an item record into the inventory table.
+ * @brief Inserts a new order into the "orders" table in the SQLite database.
  *
- * @param database A pointer to the SQLite3 database.
- * @param id The ID of the item.
- * @param omg The OMG value of the item.
- * @param coin1 The first coin value of the item.
- * @param coin2 The second coin value of the item.
- * @param coin3 The third coin value of the item.
- * @return SQLITE_OK on success, or an error code on failure.
- */
-int insert_item(sqlite3* database, int id, int omg, int coin1, int coin2,
-                int coin3);
-
-/**
- * @brief Selects and prints all records from the inventory table.
+ * This function constructs an SQL INSERT statement using the details of the
+ * provided `order` structure and executes it on the given SQLite database.
  *
- * @param database A pointer to the SQLite3 database.
- * @return SQLITE_OK on success, or an error code on failure.
- */
-int select_all(sqlite3* database);
-
-/**
- * @brief Updates an item record in the inventory table.
+ * @param database A pointer to the SQLite database connection.
+ * @param new_order A pointer to the `order` structure containing the details
+ *                  of the order to be inserted. The structure should include:
+ *                  - item: The item ID.
+ *                  - buyOrSell: Indicator of buy (e.g., 1) or sell (e.g., 0).
+ *                  - quantity: The quantity of the item.
+ *                  - unitPrice: The price per unit of the item.
+ *                  - userID: The ID of the user placing the order.
  *
- * @param database A pointer to the SQLite3 database.
- * @param id The ID of the item to update.
- * @param omg The new OMG value of the item.
- * @param coin1 The new first coin value of the item.
- * @param coin2 The new second coin value of the item.
- * @param coin3 The new third coin value of the item.
- * @return SQLITE_OK on success, or an error code on failure.
- */
-int update_item(sqlite3* database, int id, int omg, int coin1, int coin2,
-                int coin3);
-
-/**
- * @brief Deletes an item record from the inventory table.
- *
- * @param database A pointer to the SQLite3 database.
- * @param id The ID of the item to delete.
- * @return SQLITE_OK on success, or an error code on failure.
- */
-int delete_item(sqlite3* database, int id);
-
-/**
- * @brief Inserts an order record into the orders table.
- *
- * @param database A pointer to the SQLite3 database.
- * @param new_order A pointer to the order structure containing order details.
- * @return SQLITE_OK on success, or an error code on failure.
+ * @return Returns `SQLITE_OK` (0) on success. On failure, it returns an SQLite
+ *         error code and frees any allocated error message.
  */
 int insert_order(sqlite3* database, order* new_order);
-
-/**
- * @brief Selects orders for a specific user and populates an order list.
- *
- * @param database A pointer to the SQLite3 database.
- * @param userID The ID of the user whose orders are to be selected.
- * @param orderList A pointer to an array of order structures to store the
- * results.
- * @param orderCount A pointer to an integer to store the number of orders
- * retrieved.
- * @return SQLITE_OK on success, or an error code on failure.
- */
-int select_user_orders(sqlite3* database, int userID, order* orderList,
-                       int* orderCount);

@@ -86,48 +86,25 @@ int create_tables(sqlite3* database) {
 }
 
 int insert_order(sqlite3* database, order* new_order) {
-  char sql[256];
-  snprintf(sql, sizeof(sql),
-           "INSERT INTO orders (item, buyOrSell, quantity, unitPrice, userID) "
-           "VALUES (%d, %d, %d, %.2f, %d);",
-           new_order->item, new_order->buyOrSell, new_order->quantity,
-           new_order->unitPrice, new_order->userID);
-  return sqlite3_exec(database, sql, 0, 0, 0);
-}
+  char sql[SQLITE_BUFFER_SIZE];
+  int snprintf_res = snprintf(
+      sql, sizeof(sql),
+      "INSERT INTO orders (item, buyOrSell, quantity, unitPrice, userID) "
+      "VALUES (%d, %d, %d, %.2f, %d);",
+      new_order->item, new_order->buyOrSell, new_order->quantity,
+      new_order->unitPrice, new_order->userID);
 
-// Select callback
-int select_callback(void* data, int argc, char** argv, char** col) {
-  for (int i = 0; i < argc; i++) {
-    printf("%s = %s\n", col[i], argv[i] ? argv[i] : "NULL");
+  if (snprintf_res < 0 || snprintf_res >= sizeof(sql)) {
+    fprintf(stderr, "Error formatting SQL query or buffer overflow\n");
+    return SQLITE_ERROR;
   }
-  printf("\n");
-  return 0;
-}
 
-// Select all inventory
-int select_all(sqlite3* database) {
-  const char* sql = "SELECT * FROM inventory;";
-  return sqlite3_exec(database, sql, select_callback, 0, 0);
-}
+  char* errMsg = 0;
+  int res = sqlite3_exec(database, sql, 0, 0, &errMsg);
+  if (res != SQLITE_OK) {
+    sqlite3_free(errMsg);
+    return res;
+  }
 
-// Update inventory
-int update_item(sqlite3* database, int id, int omg, int coin1, int coin2,
-                int coin3) {
-  char sql[256];
-  snprintf(sql, sizeof(sql),
-           "UPDATE inventory SET omg = %d, coin1 = %d, coin2 = %d, coin3 = %d "
-           "WHERE id = %d;",
-           omg, coin1, coin2, coin3, id);
-  return sqlite3_exec(database, sql, 0, 0, 0);
+  return SQLITE_OK;
 }
-
-// Delete user inventory
-int delete_item(sqlite3* database, int id) {
-  char sql[128];
-  snprintf(sql, sizeof(sql), "DELETE FROM inventory WHERE id = %d;", id);
-  return sqlite3_exec(database, sql, 0, 0, 0);
-}
-
-// Select orders for a specific user
-int select_user_orders(sqlite3* database, int userID, order* orderList,
-                       int* orderCount) {}

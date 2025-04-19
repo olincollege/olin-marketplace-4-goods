@@ -14,13 +14,12 @@ Test(test_db, test_close_db) {
   cr_assert_eq(res, SQLITE_OK,
                "Expected close_database to return SQLITE_OK, but got %d", res);
 }
-
 Test(test_db, test_create_tables_function) {
   // Open database
-  sqlite3* db = open_database();
+  sqlite3* database = open_database();
 
   // Call the function being tested
-  int res = create_tables(db);
+  int res = create_tables(database);
   cr_assert_eq(res, SQLITE_OK, "create_tables failed: %d", res);
 
 // Helper lambda-like macro to check table existence
@@ -30,9 +29,9 @@ Test(test_db, test_create_tables_function) {
         "SELECT name FROM sqlite_master WHERE type='table' AND "             \
         "name='" table_name "';";                                            \
     sqlite3_stmt* stmt;                                                      \
-    res = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);                      \
+    res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);                \
     cr_assert_eq(res, SQLITE_OK, "Failed to prepare statement for %s: %s",   \
-                 table_name, sqlite3_errmsg(db));                            \
+                 table_name, sqlite3_errmsg(database));                      \
     res = sqlite3_step(stmt);                                                \
     cr_assert_eq(res, SQLITE_ROW, "Table '%s' does not exist.", table_name); \
     sqlite3_finalize(stmt);                                                  \
@@ -42,5 +41,5 @@ Test(test_db, test_create_tables_function) {
   CHECK_TABLE_EXISTS("orders");
   CHECK_TABLE_EXISTS("archives");
 
-  close_database(db);
+  close_database(database);
 }

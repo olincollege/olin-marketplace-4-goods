@@ -64,7 +64,7 @@ int sell(sqlite3* database, order* ord) { return insert_order(database, ord); }
 
 void myOrders(sqlite3* database, int userID, order** orderList,
               int* orderCount) {
-  select_user_orders(database, userID, orderList, orderCount);
+  // select_user_orders(database, userID, orderList, orderCount);
 }
 
 // change to return struct orders??
