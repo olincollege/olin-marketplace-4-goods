@@ -1,41 +1,68 @@
-// TODO: discuss if we need structs for inventories and stuff
+#include "command.h"
+
 #include <sqlite3.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "db.c"
+int open_db(sqlite3** database) {
+  *database = open_database();
+  if (*database == NULL) {
+    return -1;  // Return -1 if database opening fails
+  }
+  return 0;  // Return 0 on success
+}
 
-typedef enum { BUY = 0, SELL = 1 } TransactionType;
+int init_db(sqlite3* database) {
+  if (create_tables(database) != 0) {
+    if (close_database(database) != 0) {
+      fprintf(stderr,
+              "Error: Failed to close the database after table creation "
+              "failure.\n");
+      return -1;
+    };  // Clean up if table creation fails
+    return -1;  // Return -1 on failure to create tables
+  }
 
-typedef struct {
-  int userID;
-  char* name;
-  int OMG;
-  int DOGE;
-  int BTC;
-  int ETH;
-} user;
+  return 0;  // Return 0 on success
+}
 
-typedef struct {
-  int orderID;
-  int item;
-  int buyOrSell;  // 0 for buy, 1 for sell
-  int quantity;
-  int userID;
-  char* created_at;  // Timestamp for when the order was created
-} order;
+int close_db(sqlite3* database) {
+  close_database(database);
+  return 0;  // Return 0 on success
+}
 
-// change to return struct item??
-int* myInventory() {}
+int myInventory(int userID, user** cur_user) { return -1; }
 
-// return -1 if unsuccessful
-int buy(sqlite3* db, order* ord) { return insert_order(db, ord); }
+order* create_order(int item, int buyOrSell, int quantity, double unitPrice,
+                    int userID) {
+  order* new_order = (order*)malloc(sizeof(order));
+  if (new_order == NULL) {
+    return NULL;
+  }
 
-// return -1 if unsuccessful
-int sell(sqlite3* db, order* ord) { return insert_order(db, ord); }
+  new_order->item = item;
+  new_order->buyOrSell = buyOrSell;
+  new_order->quantity = quantity;
+  new_order->unitPrice = unitPrice;
+  new_order->userID = userID;
 
-// change to return struct orders??
-void myOrders(order* orderList, int* orderCount) {
-  // TODO: store stuff in orderList as they are allocated outside in the
-  // server.c
+  return new_order;
+}
+int free_order(order* ord) {
+  if (ord == NULL) {
+    return -1;  // Return -1 if the order is NULL
+  }
+  free(ord);
+  return 0;  // Return 0 on successful free
+}
+
+int buy(sqlite3* database, order* ord) { return insert_order(database, ord); }
+
+int sell(sqlite3* database, order* ord) { return insert_order(database, ord); }
+
+void myOrders(sqlite3* database, int userID, order** orderList,
+              int* orderCount) {
+  // select_user_orders(database, userID, orderList, orderCount);
 }
 
 // change to return struct orders??

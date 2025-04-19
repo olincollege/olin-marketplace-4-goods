@@ -6,12 +6,22 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-conversion")
 list(APPEND CMAKE_CTEST_ARGUMENTS --verbose)
 
 # If you need to test a library called foo, use lines like the following.
-# add_executable(test_foo test_foo.c)
-# target_link_libraries(test_foo
-#     PRIVATE foo
-#     PUBLIC ${CRITERION}
-# )
-# add_test(
-#     NAME test_foo
-#     COMMAND test_foo ${CRITERION_FLAGS}
-# )
+add_executable(test_command test_command.c)
+target_link_libraries(test_command
+    PRIVATE command db
+    PUBLIC ${CRITERION}
+)
+add_test(
+    NAME test_command
+    COMMAND test_command ${CRITERION_FLAGS}
+)
+
+add_executable(test_db test_db.c)
+target_link_libraries(test_db
+    PRIVATE db
+    PUBLIC ${CRITERION}
+)
+add_test(
+    NAME test_db
+    COMMAND test_db ${CRITERION_FLAGS}
+)
