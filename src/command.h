@@ -69,6 +69,34 @@ order* create_order(int item, int buyOrSell, int quantity, double unitPrice,
 int free_order(order* ord);
 
 /**
+ * @brief Allocates and initializes a new user struct.
+ *
+ * This function creates a user struct on the heap and sets its fields using
+ * the provided parameters. It also allocates memory for the user's name.
+ *
+ * @param userID The user's unique ID.
+ * @param name The user's name (will be copied internally).
+ * @param OMG The amount of OMG the user has.
+ * @param DOGE The amount of DOGE the user has.
+ * @param BTC The amount of BTC the user has.
+ * @param ETH The amount of ETH the user has.
+ * @return A pointer to the created user struct, or NULL if allocation fails.
+ */
+user* create_user(int userID, const char* name, int OMG, int DOGE, int BTC,
+                  int ETH);  // Defined below
+
+/**
+ * @brief Frees the memory associated with a user struct.
+ *
+ * This function releases the dynamically allocated memory for both the user's
+ * name and the user struct itself.
+ *
+ * @param usr Pointer to the user struct to be freed.
+ * @return 0 on success, -1 if the user pointer is NULL.
+ */
+int free_user(user* usr);  // Defined below
+
+/**
  * @brief Retrieves the inventory of a user.
  *
  * @param userID The ID of the user.

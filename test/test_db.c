@@ -136,3 +136,57 @@ Test(test_orders, test_insert_order) {
   sqlite3_finalize(stmt);
   close_database(database);
 }
+Test(test_users, test_insert_user) {
+  // Open database
+  sqlite3* database = open_database();
+  cr_assert_not_null(database, "Database connection should not be NULL");
+
+  // Reset tables
+  drop_all_tables(database);
+  create_tables(database);
+
+  // Create a mock user
+  user new_user = {
+      .userID = 1,
+      .name = "Test User",
+      .OMG = 100,
+      .DOGE = 200,
+      .BTC = 50,
+      .ETH = 75,
+  };
+
+  // Call the function being tested
+  int res = insert_user(database, &new_user);
+  cr_assert_eq(res, SQLITE_OK, "insert_user failed: %d", res);
+
+  // Verify the user was inserted
+  const char* verify_sql =
+      "SELECT userID, name, OMG, DOGE, BTC, ETH FROM users WHERE userID = ?;";
+  sqlite3_stmt* stmt = NULL;
+  res = sqlite3_prepare_v2(database, verify_sql, -1, &stmt, NULL);
+  cr_assert_eq(res, SQLITE_OK, "Failed to prepare verification statement: %s",
+               sqlite3_errmsg(database));
+
+  res = sqlite3_bind_int(stmt, 1, new_user.userID);
+  cr_assert_eq(res, SQLITE_OK, "Failed to bind user ID: %s",
+               sqlite3_errmsg(database));
+
+  res = sqlite3_step(stmt);
+  cr_assert_eq(res, SQLITE_ROW, "No user was inserted into the database.");
+
+  cr_assert_eq(sqlite3_column_int(stmt, 0), new_user.userID,
+               "Inserted user ID does not match.");
+  cr_assert_str_eq((const char*)sqlite3_column_text(stmt, 1), new_user.name,
+                   "Inserted user name does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 2), new_user.OMG,
+               "Inserted OMG balance does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 3), new_user.DOGE,
+               "Inserted DOGE balance does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 4), new_user.BTC,
+               "Inserted BTC balance does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 5), new_user.ETH,
+               "Inserted ETH balance does not match.");
+
+  sqlite3_finalize(stmt);
+  close_database(database);
+}
