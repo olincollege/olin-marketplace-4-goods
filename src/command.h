@@ -52,8 +52,7 @@ int close_db(sqlite3* database);
  * @return A pointer to the newly created order, or NULL if memory allocation
  * fails.
  */
-order* create_order(int item, int buyOrSell, int quantity, double unitPrice,
-                    int userID);
+order* create_order(string_array* params, int userID);
 
 /**
  * @brief Frees the memory allocated for an order.

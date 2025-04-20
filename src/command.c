@@ -3,6 +3,9 @@
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "util.h"
 
 int open_db(sqlite3** database) {
   *database = open_database();
@@ -33,17 +36,23 @@ int close_db(sqlite3* database) {
 
 int myInventory(int userID, user** cur_user) { return -1; }
 
-order* create_order(int item, int buyOrSell, int quantity, double unitPrice,
-                    int userID) {
+order* create_order(string_array* params, int userID) {
   order* new_order = (order*)malloc(sizeof(order));
   if (new_order == NULL) {
     return NULL;
   }
-
-  new_order->item = item;
-  new_order->buyOrSell = buyOrSell;
-  new_order->quantity = quantity;
-  new_order->unitPrice = unitPrice;
+  char* endptr;
+  // new_order->item = params->strings[1];
+  new_order->unitPrice = strtod(params->strings[2], &endptr);
+  if (endptr == params->strings[2]) {
+    printf("Conversion failed\n");
+  }
+  new_order->buyOrSell = (strcasecmp(params->strings[0], "buy") == 0) ? 0 : 1;
+  endptr = NULL;
+  new_order->quantity = strtol(params->strings[3], &endptr, 10);
+  if (endptr == params->strings[3]) {
+    printf("Conversion failed\n");
+  }
   new_order->userID = userID;
 
   return new_order;
