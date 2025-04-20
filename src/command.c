@@ -3,6 +3,7 @@
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>  // Include for strlen and strcpy
 
 int open_db(sqlite3** database) {
   *database = open_database();
@@ -57,12 +58,48 @@ order* create_order(int item, int buyOrSell, int quantity, double unitPrice,
 
   return new_order;
 }
+
 int free_order(order* ord) {
   if (ord == NULL) {
     return -1;  // Return -1 if the order is NULL
   }
   free(ord);
   return 0;  // Return 0 on successful free
+}
+
+user* create_user(int userID, const char* name, int OMG, int DOGE, int BTC,
+                  int ETH) {
+  user* new_user = (user*)malloc(sizeof(user));
+  if (new_user == NULL) {
+    return NULL;  // Return NULL if memory allocation fails
+  }
+
+  new_user->userID = userID;
+  new_user->OMG = OMG;
+  new_user->DOGE = DOGE;
+  new_user->BTC = BTC;
+  new_user->ETH = ETH;
+
+  new_user->name = (char*)malloc(strlen(name) + 1);
+  if (new_user->name == NULL) {
+    free(new_user);
+    return NULL;  // Return NULL if memory allocation for name fails
+  }
+  strncpy(new_user->name, name, strlen(name) + 1);
+
+  return new_user;  // Return the created user
+}
+
+int free_user(user* usr) {
+  if (usr == NULL) {
+    return -1;  // Return -1 if the user is NULL
+  }
+
+  if (usr->name != NULL) {
+    free(usr->name);  // Free the name string
+  }
+  free(usr);  // Free the user struct
+  return 0;   // Return 0 on successful free
 }
 
 int buy(sqlite3* database, order* ord) { return insert_order(database, ord); }
