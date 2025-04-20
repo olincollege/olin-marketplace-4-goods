@@ -96,6 +96,12 @@ typedef struct {
 #define FILENAME "database.db"
 
 /**
+ * @def BUSY_TIMEOUT
+ * @brief Default busy timeout for SQLite operations in milliseconds.
+ */
+#define BUSY_TIMEOUT 1000
+
+/**
  * @brief Opens a SQLite3 database for use.
  *
  * @return SQLITE_OK on success, or an error code on failure.
@@ -167,6 +173,22 @@ int drop_all_tables(sqlite3* database);
  *          `new_order` structure contains valid values.
  */
 int insert_order(sqlite3* database, order* new_order);
+
+/**
+ * Inserts a new user record into the "users" table in the SQLite database.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param new_user A pointer to a user structure containing the data to be
+ * inserted.
+ * @return SQLITE_OK on success, or an SQLite error code on failure.
+ *
+ * This function prepares an SQL INSERT statement, binds the user data to the
+ * statement, executes it, and finalizes the statement. If any step fails, an
+ * error message is printed to stderr and the corresponding SQLite error code
+ * is returned.
+ */
+
+int insert_user(sqlite3* database, user* new_user);
 
 /**
  * @brief Prints the contents of specific tables from a SQLite database.

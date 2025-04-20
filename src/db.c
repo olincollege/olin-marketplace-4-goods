@@ -13,7 +13,7 @@ sqlite3* open_database(void) {
   // Set busy timeout to 1000 milliseconds (1 second)
   // if the db is locked/busy when accessed, this will make the process retry
   // for 1 sec
-  sqlite3_busy_timeout(database, 1000);
+  sqlite3_busy_timeout(database, BUSY_TIMEOUT);
   return database;
 }
 
@@ -114,6 +114,37 @@ int insert_order(sqlite3* database, order* new_order) {
   sqlite3_bind_int(stmt, 3, new_order->quantity);
   sqlite3_bind_double(stmt, 4, new_order->unitPrice);
   sqlite3_bind_int(stmt, 5, new_order->userID);
+
+  res = sqlite3_step(stmt);
+  if (res != SQLITE_DONE) {
+    fprintf(stderr, "Failed to execute statement: %s\n",
+            sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return res;
+  }
+
+  sqlite3_finalize(stmt);
+  return SQLITE_OK;
+}
+
+int insert_user(sqlite3* database, user* new_user) {
+  const char* sql =
+      "INSERT INTO users (name, OMG, DOGE, BTC, ETH) "
+      "VALUES (?, ?, ?, ?, ?);";
+
+  sqlite3_stmt* stmt = NULL;
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to prepare statement: %s\n",
+            sqlite3_errmsg(database));
+    return res;
+  }
+
+  sqlite3_bind_text(stmt, 1, new_user->name, -1, SQLITE_STATIC);
+  sqlite3_bind_int(stmt, 2, new_user->OMG);
+  sqlite3_bind_int(stmt, 3, new_user->DOGE);
+  sqlite3_bind_int(stmt, 4, new_user->BTC);
+  sqlite3_bind_int(stmt, 5, new_user->ETH);
 
   res = sqlite3_step(stmt);
   if (res != SQLITE_DONE) {
