@@ -20,22 +20,44 @@ void close_database(sqlite3* db) {
 }
 
 // Creates a basic table for the inventory
-int create_table(sqlite3* db) {
-  const char* sql =
-      "CREATE TABLE IF NOT EXISTS inventory ("
-      "id,"
-      "omg,"
-      "coin1"
-      "coin2"
-      "coin3);";
-  char* errMsg = 0;
-  int rc = sqlite3_exec(db, sql, 0, 0, &errMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "Create table error: %s\n", errMsg);
-    sqlite3_free(errMsg);
-  }
-  return rc;
-}
+int create_tables(sqlite3 *db) {
+    char *err_msg = 0;
+
+    const char *sql =
+        "CREATE TABLE IF NOT EXISTS users ("
+        "userID INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "name TEXT NOT NULL,"
+        "OMG INTEGER DEFAULT 0,"
+        "DOGE INTEGER DEFAULT 0,"
+        "BTC INTEGER DEFAULT 0,"
+        "ETH INTEGER DEFAULT 0);"
+
+        "CREATE TABLE IF NOT EXISTS orders ("
+        "orderID INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "item INTEGER NOT NULL,"
+        "buyOrSell INTEGER NOT NULL CHECK (buyOrSell IN (0, 1)),"
+        "quantity INTEGER NOT NULL CHECK (quantity > 0),"
+        "unitPrice REAL NOT NULL CHECK (unitPrice >= 0),"
+        "userID INTEGER NOT NULL,"
+        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP;"
+        
+
+        "CREATE TABLE IF NOT EXISTS archives ("
+        "orderID INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "item INTEGER NOT NULL,"
+        "buyOrSell INTEGER NOT NULL CHECK (buyOrSell IN (0, 1)),"
+        "quantity INTEGER NOT NULL CHECK (quantity > 0),"
+        "unitPrice REAL NOT NULL CHECK (unitPrice >= 0),"
+        "userID INTEGER NOT NULL,"
+        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP";
+        
+        int rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
+
+        if (rc != SQLITE_OK) {
+            fprintf(stderr, "SQL error: %s\n", err_msg);
+            sqlite3_free(err_msg);
+            return rc;
+        }
 
 // Insert a user records into the inventory
 int insert_user(sqlite3* db, int id, int omg, int coin1, int coin2, int coin3) {
