@@ -1,5 +1,6 @@
 #include <criterion/criterion.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "../src/db.h"
 
@@ -297,13 +298,16 @@ Test(test_orders, test_find_matching_buy) {
       .item = COIN_BTC,
       .buyOrSell = BUY,
       .quantity = 10,
-      .unitPrice = 100.50,
+      .unitPrice = 600.50,
       .userID = 1,
   };
 
   // Insert the buy order
   res = insert_order(database, &buy_order);
   cr_assert_eq(res, SQLITE_OK, "insert_order for buy_order failed: %d", res);
+
+  usleep(500000);
+  usleep(500000);
 
   // Create another mock buy order with a different price
   order another_buy_order = {
@@ -352,8 +356,8 @@ Test(test_orders, test_find_matching_buy) {
   cr_assert_eq(res, SQLITE_ROW,
                "Matching buy order not found in the database.");
 
-  // dump_database(database);
-  // printf("Matching order ID: %d\n", matching_order_id);
+  dump_database(database);
+  printf("Matching order ID: %d\n", matching_order_id);
 
   sqlite3_finalize(stmt);
   close_database(database);
