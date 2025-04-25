@@ -221,6 +221,48 @@ int delete_order(sqlite3* database, int orderID);
  * @param database A pointer to the SQLite database connection.
  * @param userID The ID of the user to retrieve.
  * @param user_out A pointer to a user struct to populate.
- * @return SQLITE_OK if found, SQLITE_NOTFOUND if not, or another SQLite error code.
+ * @return SQLITE_OK if found, SQLITE_NOTFOUND if not, or another SQLite error
+ * code.
  */
 int get_user(sqlite3* database, int userID, user* user_out);
+
+/**
+ * Finds a matching buy order in the database for the given search order.
+ *
+ * This function searches for a buy order in the "orders" table that matches
+ * the specified criteria:
+ * - The item matches the item in the search order.
+ * - The order is a buy order (buyOrSell = 0).
+ * - The unit price is greater than or equal to the unit price in the search
+ * order.
+ * - The user ID is different from the user ID in the search order.
+ *
+ * The matching order is selected based on the earliest creation time
+ * (ordered by `created_at` in ascending order) and is limited to one result.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param search_order A pointer to the `order` structure containing the search
+ * criteria.
+ * @return The `orderID` of the matching buy order if found, or -1 if no
+ * matching order is found or if an error occurs during the query.
+ */
+int find_matching_buy(sqlite3* database, order* search_order);
+
+/**
+ * Retrieves an order from the database based on the given order ID.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param orderID The ID of the order to retrieve.
+ * @param order_out A pointer to an `order` structure where the retrieved order
+ * details will be stored. The `created_at` field will be dynamically allocated
+ * and must be freed by the caller.
+ * @return SQLITE_OK if the order is successfully retrieved, SQLITE_NOTFOUND if
+ * the order is not found, or an SQLite error code if an error occurs during the
+ * operation.
+ *
+ * This function prepares and executes an SQL query to fetch the order details
+ * from the `orders` table. If the order is found, its details are populated
+ * into the `order_out` structure. If the order is not found or an error occurs,
+ * appropriate error messages are printed to `stderr`.
+ */
+int get_order(sqlite3* database, int orderID, order* order_out);

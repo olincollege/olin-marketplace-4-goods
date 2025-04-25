@@ -1,4 +1,6 @@
 #include <criterion/criterion.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #include "../src/db.h"
 
@@ -251,6 +253,111 @@ Test(test_orders, test_delete_order) {
 
   res = sqlite3_step(stmt);
   cr_assert_eq(res, SQLITE_DONE, "Order was not deleted from the database.");
+
+  sqlite3_finalize(stmt);
+  close_database(database);
+}
+
+Test(test_orders, test_find_matching_buy) {
+  // Open database
+  sqlite3* database = open_database();
+  cr_assert_not_null(database, "Database connection should not be NULL");
+
+  // Reset tables
+  drop_all_tables(database);
+  create_tables(database);
+
+  // Create mock users
+  user user1 = {
+      .userID = 1,
+      .name = "User One",
+      .OMG = 100,
+      .DOGE = 200,
+      .BTC = 50,
+      .ETH = 75,
+  };
+
+  user user2 = {
+      .userID = 2,
+      .name = "User Two",
+      .OMG = 150,
+      .DOGE = 250,
+      .BTC = 60,
+      .ETH = 85,
+  };
+
+  // Insert users
+  int res = insert_user(database, &user1);
+  cr_assert_eq(res, SQLITE_OK, "insert_user for user1 failed: %d", res);
+
+  res = insert_user(database, &user2);
+  cr_assert_eq(res, SQLITE_OK, "insert_user for user2 failed: %d", res);
+
+  // Create a mock buy order
+  order buy_order = {
+      .item = COIN_BTC,
+      .buyOrSell = BUY,
+      .quantity = 10,
+      .unitPrice = 600.50,
+      .userID = 1,
+  };
+
+  // Insert the buy order
+  res = insert_order(database, &buy_order);
+  cr_assert_eq(res, SQLITE_OK, "insert_order for buy_order failed: %d", res);
+
+  usleep(500000);
+  usleep(500000);
+
+  // Create another mock buy order with a different price
+  order another_buy_order = {
+      .item = COIN_BTC,
+      .buyOrSell = BUY,
+      .quantity = 10,
+      .unitPrice = 101.00,
+      .userID = 1,
+  };
+
+  // Insert the second buy order
+  res = insert_order(database, &another_buy_order);
+  cr_assert_eq(res, SQLITE_OK, "insert_order for another_buy_order failed: %d",
+               res);
+
+  // Create a mock search order
+  order search_order = {
+      .item = COIN_BTC,
+      .buyOrSell = SELL,
+      .quantity = 10,
+      .unitPrice = 90,
+      .userID = 2,
+  };
+
+  // Call the function being tested
+  int matching_order_id = find_matching_buy(database, &search_order);
+  cr_assert_neq(matching_order_id, -1, "No matching buy order found.");
+
+  // Verify the matching order ID
+  const char* verify_sql =
+      "SELECT orderID FROM orders WHERE orderID = ? AND buyOrSell = ?;";
+  sqlite3_stmt* stmt = NULL;
+  res = sqlite3_prepare_v2(database, verify_sql, -1, &stmt, NULL);
+  cr_assert_eq(res, SQLITE_OK, "Failed to prepare verification statement: %s",
+               sqlite3_errmsg(database));
+
+  res = sqlite3_bind_int(stmt, 1, matching_order_id);
+  cr_assert_eq(res, SQLITE_OK, "Failed to bind order ID: %s",
+               sqlite3_errmsg(database));
+
+  res = sqlite3_bind_int(stmt, 2, BUY);
+  cr_assert_eq(res, SQLITE_OK, "Failed to bind buyOrSell: %s",
+               sqlite3_errmsg(database));
+
+  res = sqlite3_step(stmt);
+  cr_assert_eq(res, SQLITE_ROW,
+               "Matching buy order not found in the database.");
+
+  dump_database(database);
+  printf("Matching order ID: %d\n", matching_order_id);
 
   sqlite3_finalize(stmt);
   close_database(database);
