@@ -90,16 +90,16 @@ typedef struct {
 } order;
 
 /**
- * @def SQLITE_BUFFER_SIZE
- * @brief Defines the fixed size for SQLite query buffers.
- */
-#define SQLITE_BUFFER_SIZE 1024
-
-/**
  * @def database_FILENAME
  * @brief Default filename for the SQLite database.
  */
 #define FILENAME "database.db"
+
+/**
+ * @def BUSY_TIMEOUT
+ * @brief Default busy timeout for SQLite operations in milliseconds.
+ */
+#define BUSY_TIMEOUT 1000
 
 /**
  * @brief Opens a SQLite3 database for use.
@@ -130,21 +130,97 @@ int close_database(sqlite3* database);
 int create_tables(sqlite3* database);
 
 /**
+ * @brief Drops all tables from the given SQLite database.
+ *
+ * This function disables foreign key constraints temporarily, begins a
+ * transaction, and drops the `users`, `orders`, and `archives` tables if they
+ * exist. After the operation, it re-enables foreign key constraints.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @return SQLITE_OK on success, or SQLITE_ERROR if an error occurs during the
+ * operation.
+ *
+ * @note This function assumes the database connection is valid and open.
+ *       Ensure that no other operations are being performed on the database
+ *       while this function is executed.
+ * @warning Dropping tables is a destructive operation. Ensure that this
+ * function is called only when the data in the tables is no longer needed.
+ */
+int drop_all_tables(sqlite3* database);
+
+/**
  * @brief Inserts a new order into the "orders" table in the SQLite database.
  *
- * This function constructs an SQL INSERT statement using the details of the
- * provided `order` structure and executes it on the given SQLite database.
+ * This function prepares an SQL INSERT statement to add a new order to the
+ * "orders" table. It binds the values from the provided `order` structure
+ * to the SQL statement and executes it.
  *
  * @param database A pointer to the SQLite database connection.
  * @param new_order A pointer to the `order` structure containing the details
  *                  of the order to be inserted. The structure should include:
- *                  - item: The item ID.
- *                  - buyOrSell: Indicator of buy (e.g., 1) or sell (e.g., 0).
- *                  - quantity: The quantity of the item.
- *                  - unitPrice: The price per unit of the item.
+ *                  - item: The type of cryptocurrency being traded.
+ *                  - buyOrSell: Indicator of buy (0) or sell (1).
+ *                  - quantity: The quantity of the cryptocurrency.
+ *                  - unitPrice: The price per unit of the cryptocurrency.
  *                  - userID: The ID of the user placing the order.
  *
  * @return Returns `SQLITE_OK` (0) on success. On failure, it returns an SQLite
- *         error code and frees any allocated error message.
+ *         error code and logs the error message to stderr.
+ *
+ * @note Ensure that the database connection is valid and open before calling
+ *       this function.
+ * @warning This function does not validate the input data. Ensure that the
+ *          `new_order` structure contains valid values.
  */
 int insert_order(sqlite3* database, order* new_order);
+
+/**
+ * Inserts a new user record into the "users" table in the SQLite database.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param new_user A pointer to a user structure containing the data to be
+ * inserted.
+ * @return SQLITE_OK on success, or an SQLite error code on failure.
+ *
+ * This function prepares an SQL INSERT statement, binds the user data to the
+ * statement, executes it, and finalizes the statement. If any step fails, an
+ * error message is printed to stderr and the corresponding SQLite error code
+ * is returned.
+ */
+
+int insert_user(sqlite3* database, user* new_user);
+
+/**
+ * @brief Prints the contents of specific tables from a SQLite database.
+ *
+ * Iterates through predefined SQL queries for "users", "orders", and "archives"
+ * tables, executes them, and displays the results in a tabular format.
+ *
+ * @param database Pointer to an open SQLite database connection.
+ *
+ * Handles:
+ * - INTEGER, FLOAT, TEXT, and NULL data types.
+ * - Errors during query preparation or execution.
+ *
+ * Assumes:
+ * - The database connection is valid and tables exist.
+ */
+void dump_database(sqlite3* database);
+
+/**
+ * Deletes an order by ID from the "orders" table.
+ */
+int delete_order(sqlite3* database, int orderID);
+
+/**
+ * @brief Retrieves a user by userID.
+ *
+ * Allocates a copy of the username string on the heap.
+ * Caller is responsible for freeing the memory.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param userID The ID of the user to retrieve.
+ * @param user_out A pointer to a user struct to populate.
+ * @return SQLITE_OK if found, SQLITE_NOTFOUND if not, or another SQLite error code.
+ */
+int get_user(sqlite3* database, int userID, user* user_out);

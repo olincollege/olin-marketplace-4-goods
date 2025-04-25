@@ -3,9 +3,11 @@
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+
+#include <string.h>  // Include for strlen and strcpy
 
 #include "util.h"
+
 
 int open_db(sqlite3** database) {
   *database = open_database();
@@ -16,6 +18,15 @@ int open_db(sqlite3** database) {
 }
 
 int init_db(sqlite3* database) {
+  if (drop_all_tables(database) != 0) {
+    fprintf(stderr, "Error: Failed to drop all tables.\n");
+    if (close_database(database) != 0) {
+      fprintf(
+          stderr,
+          "Error: Failed to close the database after table drop failure.\n");
+    }
+    return -1;  // Return -1 on failure to drop tables
+  }
   if (create_tables(database) != 0) {
     if (close_database(database) != 0) {
       fprintf(stderr,
@@ -57,6 +68,7 @@ order* create_order(string_array* params, int userID) {
 
   return new_order;
 }
+
 int free_order(order* ord) {
   if (ord == NULL) {
     return -1;  // Return -1 if the order is NULL
@@ -65,10 +77,43 @@ int free_order(order* ord) {
   return 0;  // Return 0 on successful free
 }
 
-// return -1 if unsuccessful
+user* create_user(int userID, const char* name, int OMG, int DOGE, int BTC,
+                  int ETH) {
+  user* new_user = (user*)malloc(sizeof(user));
+  if (new_user == NULL) {
+    return NULL;  // Return NULL if memory allocation fails
+  }
+
+  new_user->userID = userID;
+  new_user->OMG = OMG;
+  new_user->DOGE = DOGE;
+  new_user->BTC = BTC;
+  new_user->ETH = ETH;
+
+  new_user->name = (char*)malloc(strlen(name) + 1);
+  if (new_user->name == NULL) {
+    free(new_user);
+    return NULL;  // Return NULL if memory allocation for name fails
+  }
+  strncpy(new_user->name, name, strlen(name) + 1);
+
+  return new_user;  // Return the created user
+}
+
+int free_user(user* usr) {
+  if (usr == NULL) {
+    return -1;  // Return -1 if the user is NULL
+  }
+
+  if (usr->name != NULL) {
+    free(usr->name);  // Free the name string
+  }
+  free(usr);  // Free the user struct
+  return 0;   // Return 0 on successful free
+}
+
 int buy(sqlite3* database, order* ord) { return insert_order(database, ord); }
 
-// return -1 if unsuccessful
 int sell(sqlite3* database, order* ord) { return insert_order(database, ord); }
 
 void myOrders(sqlite3* database, int userID, order** orderList,
