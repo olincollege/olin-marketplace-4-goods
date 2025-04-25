@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Opens a database for use
 sqlite3* open_database(void) {
@@ -217,7 +218,8 @@ int delete_order(sqlite3* database, int orderID) {
 
   int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
   if (res != SQLITE_OK) {
-    fprintf(stderr, "Failed to prepare the delete statement: %s\n", sqlite3_errmsg(database));
+    fprintf(stderr, "Failed to prepare the delete statement: %s\n",
+            sqlite3_errmsg(database));
     return res;
   }
 
@@ -225,7 +227,8 @@ int delete_order(sqlite3* database, int orderID) {
 
   res = sqlite3_step(stmt);
   if (res != SQLITE_DONE) {
-    fprintf(stderr, "Failed to execute on the delete statement: %s\n", sqlite3_errmsg(database));
+    fprintf(stderr, "Failed to execute on the delete statement: %s\n",
+            sqlite3_errmsg(database));
     sqlite3_finalize(stmt);
     return res;
   }
@@ -234,20 +237,22 @@ int delete_order(sqlite3* database, int orderID) {
   return SQLITE_OK;
 }
 
-
 int get_user(sqlite3* database, int userID, user* user_out) {
-  const char* sql = "SELECT userID, name, OMG, DOGE, BTC, ETH FROM users WHERE userID = ?;";
+  const char* sql =
+      "SELECT userID, name, OMG, DOGE, BTC, ETH FROM users WHERE userID = ?;";
   sqlite3_stmt* stmt = NULL;
 
   int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
   if (res != SQLITE_OK) {
-    fprintf(stderr, "Failed to prepare the get_user statement: %s\n", sqlite3_errmsg(database));
+    fprintf(stderr, "Failed to prepare the get_user statement: %s\n",
+            sqlite3_errmsg(database));
     return res;
   }
 
   sqlite3_bind_int(stmt, 1, userID);
 
-  if ((res = sqlite3_step(stmt)) == SQLITE_ROW) {
+  res = sqlite3_step(stmt);
+  if (res == SQLITE_ROW) {
     user_out->userID = sqlite3_column_int(stmt, 0);
     const unsigned char* name = sqlite3_column_text(stmt, 1);
     user_out->name = strdup((const char*)name);
