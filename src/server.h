@@ -1,6 +1,8 @@
 #pragma once
 
 #include <netinet/in.h>
+#include <pthread.h>
+#include <sqlite3.h>
 #include <sys/socket.h>
 
 enum { BACKLOG_SIZE = 10 };
@@ -68,7 +70,8 @@ void listen_for_connections(echo_server* server);
  * @param server The server to accept the connection on.
  * @return 0 for the parent process and -1 for the child (echo) process.
  */
-int accept_client(echo_server* server);
+int accept_client(echo_server* server, pthread_mutex_t* mutex, int userID,
+                  sqlite3* database);
 
 /**
  * Read and echo lines from a client socket until the end of the file.
@@ -82,4 +85,5 @@ int accept_client(echo_server* server);
  *
  * @param socket_descriptor The socket descriptor for the client connection.
  */
-void echo(int socket_descriptor);
+void echo(int socket_descriptor, pthread_mutex_t* mutex, int userID,
+          sqlite3* database);

@@ -10,9 +10,11 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "command.h"
 #include "util.h"
 
 echo_server* make_echo_server(struct sockaddr_in ip_addr, int max_backlog) {
@@ -45,7 +47,8 @@ void listen_for_connections(echo_server* server) {
   }
 }
 
-int accept_client(echo_server* server) {
+int accept_client(echo_server* server, pthread_mutex_t* mutex, int userID,
+                  sqlite3* database) {
   struct sockaddr_storage client_addr;
   unsigned int address_size = sizeof(client_addr);
   int connect_d = accept4(server->listener, (struct sockaddr*)&client_addr,
@@ -54,17 +57,20 @@ int accept_client(echo_server* server) {
     error_and_exit("Can't open secondary socket");
   }
   if (!fork()) {
-    echo(connect_d);
+    echo(connect_d, mutex, userID, database);
     return -1;
   }
   return 0;
 }
 
-void echo(int socket_descriptor) {
+void echo(int socket_descriptor, pthread_mutex_t* mutex, int userID,
+          sqlite3* database) {
   FILE* comm_file = fdopen(socket_descriptor, "r+");
   if (comm_file == NULL) {
     error_and_exit("Can't open file");
   }
+
+  // Send welcome message
   if (fputs(" $$$$$$\\  $$\\      $$\\  $$$$$$\\ \r\n"
             "$$  __$$\\ $$$\\    $$$ |$$  __$$\\\r\n"
             "$$ /  $$ |$$$$\\  $$$$ |$$ /  \\__|\r\n"
@@ -83,13 +89,35 @@ void echo(int socket_descriptor) {
     if (getline(&buffer, &buf_size, comm_file) == -1) {
       error_and_exit("Can't get line");
     }
-    if (fputs(buffer, comm_file) == -1) {
-      error_and_exit("Error sending line!");
+    string_array* command_tokens = tokenize_line(buffer);
+    if (strcasecmp(command_tokens->strings[0], "myInventory") == 0) {
+      // Handle myInventory
+    } else if (strcasecmp(command_tokens->strings[0], "buy") == 0) {
+      order* buy_order = create_order(command_tokens, userID);
+      if (buy(database, buy_order) == -1) {
+        if (fputs("Can't create buy order!", comm_file) == EOF) {
+          error_and_exit("Couldn't send line");
+        }
+      }
+    } else if (strcasecmp(command_tokens->strings[0], "sell") == 0) {
+      order* sell_order = create_order(command_tokens, userID);
+      if (sell(database, sell_order) == -1) {
+        if (fputs("Can't create buy order!", comm_file) == EOF) {
+          error_and_exit("Couldn't send line");
+        }
+      }
+    } else if (strcasecmp(command_tokens->strings[0], "myOrders") == 0) {
+      // Handle "myOrders" command
+    } else if (strcasecmp(command_tokens->strings[0], "cancelOrder") == 0) {
+      // Handle "cancelOrder" command
+    } else if (strcasecmp(command_tokens->strings[0], "view") == 0) {
+      // Handle "view" command
+    } else {
+      // Handle unknown command
     }
-    if (fputs("TEST TEST\r\n", comm_file) == -1) {
-      error_and_exit("Error sending line!");
-    }
+
     free(buffer);
+    free_string_array(command_tokens);
   }
   puts("EXITED");
 }
