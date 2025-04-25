@@ -269,42 +269,35 @@ int get_user(sqlite3* database, int userID, user* user_out) {
   return SQLITE_NOTFOUND;
 }
 
-// TODO: talk to oscar about how to match: when posting a sell, do i match with
-// the highest buy order price? or it also depends on the time created at
+int find_matching_buy(sqlite3* database, order* search_order) {
+  const char* sql =
+      "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, "
+      "created_at "
+      "FROM orders "
+      "WHERE item = ? AND buyOrSell = 0 AND unitPrice >= ? AND userID != ? "
+      "ORDER BY created_at ASC LIMIT 1;";
+  sqlite3_stmt* stmt = NULL;
 
-// int find_matching_buy(sqlite3* database, order*
-// search_order) {
-//   const char* sql =
-//       "SELECT orderID "
-//       "FROM orders WHERE item = ? AND unitPrice >= ? AND buyOrSell = ? "
-//       "ORDER BY unitPrice ASC, created_at ASC LIMIT 1;";
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr,
+            "Failed to prepare the find_matching_higher statement: %s\n",
+            sqlite3_errmsg(database));
+    return res;
+  }
 
-//   sqlite3_stmt* stmt = NULL;
-//   int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
-//   if (res != SQLITE_OK) {
-//     fprintf(stderr, "Failed to prepare the find_matching_buy statement:
-//     %s\n",
-//             sqlite3_errmsg(database));
-//     return -1;
-//   }
+  sqlite3_bind_int(stmt, 1, search_order->item);
+  sqlite3_bind_double(stmt, 2, search_order->unitPrice);
+  sqlite3_bind_int(stmt, 3, search_order->userID);
 
-//   sqlite3_bind_int(stmt, 1, search_order->item);
-//   sqlite3_bind_double(stmt, 2, search_order->unitPrice);
-//   sqlite3_bind_int(stmt, 3, search_order->buyOrSell);
+  res = sqlite3_step(stmt);
+  if (res == SQLITE_ROW) {
+    int orderID = sqlite3_column_int(stmt, 0);
+    sqlite3_finalize(stmt);
+    return orderID;
+  }
 
-//   res = sqlite3_step(stmt);
-//   if (res == SQLITE_ROW) {
-//     int result_order_id = sqlite3_column_int(stmt, 0);
-//     sqlite3_finalize(stmt);
-//     return result_order_id;
-//   } else if (res == SQLITE_DONE) {
-//     fprintf(stderr, "No matching order found.\n");
-//     sqlite3_finalize(stmt);
-//     return -1;
-//   }
-
-//   fprintf(stderr, "Error executing find_matching_buy statement: %s\n",
-//           sqlite3_errmsg(database));
-//   sqlite3_finalize(stmt);
-//   return -1;
-// }
+  fprintf(stderr, "No matching order found with higher price.\n");
+  sqlite3_finalize(stmt);
+  return -1;  // Return -1 if no matching order is found
+}
