@@ -206,3 +206,21 @@ int insert_user(sqlite3* database, user* new_user);
  * - The database connection is valid and tables exist.
  */
 void dump_database(sqlite3* database);
+
+/**
+ * Deletes an order by ID from the "orders" table.
+ */
+int delete_order(sqlite3* database, int orderID);
+
+/**
+ * @brief Retrieves a user by userID.
+ *
+ * Allocates a copy of the username string on the heap.
+ * Caller is responsible for freeing the memory.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param userID The ID of the user to retrieve.
+ * @param user_out A pointer to a user struct to populate.
+ * @return SQLITE_OK if found, SQLITE_NOTFOUND if not, or another SQLite error code.
+ */
+int get_user(sqlite3* database, int userID, user* user_out);
