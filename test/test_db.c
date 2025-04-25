@@ -190,3 +190,68 @@ Test(test_users, test_insert_user) {
   sqlite3_finalize(stmt);
   close_database(database);
 }
+
+Test(test_orders, test_delete_order) {
+  // Open database
+  sqlite3* database = open_database();
+  cr_assert_not_null(database, "Database connection should not be NULL");
+
+  // Reset tables
+  drop_all_tables(database);
+  create_tables(database);
+
+  // Create a mock order
+  order new_order = {
+      .item = COIN_BTC,
+      .buyOrSell = BUY,
+      .quantity = 10,
+      .unitPrice = 100.50,
+      .userID = 1,
+  };
+
+  // Insert a user to satisfy the foreign key constraint
+  const char* insert_user_sql =
+      "INSERT INTO users (name) VALUES ('Test User');";
+  char* errMsg = NULL;
+  int res = sqlite3_exec(database, insert_user_sql, NULL, NULL, &errMsg);
+  cr_assert_eq(res, SQLITE_OK, "Failed to insert user: %s", errMsg);
+  sqlite3_free(errMsg);
+
+  // Insert the order
+  res = insert_order(database, &new_order);
+  cr_assert_eq(res, SQLITE_OK, "insert_order failed: %d", res);
+
+  // Verify the order was inserted
+  const char* verify_insert_sql = "SELECT orderID FROM orders;";
+  sqlite3_stmt* stmt = NULL;
+  res = sqlite3_prepare_v2(database, verify_insert_sql, -1, &stmt, NULL);
+  cr_assert_eq(res, SQLITE_OK, "Failed to prepare verification statement: %s",
+               sqlite3_errmsg(database));
+
+  res = sqlite3_step(stmt);
+  cr_assert_eq(res, SQLITE_ROW, "No order was inserted into the database.");
+
+  int orderID = sqlite3_column_int(stmt, 0);
+  sqlite3_finalize(stmt);
+
+  // Delete the order
+  res = delete_order(database, orderID);
+  cr_assert_eq(res, SQLITE_OK, "delete_order failed: %d", res);
+
+  // Verify the order was deleted
+  const char* verify_delete_sql =
+      "SELECT orderID FROM orders WHERE orderID = ?;";
+  res = sqlite3_prepare_v2(database, verify_delete_sql, -1, &stmt, NULL);
+  cr_assert_eq(res, SQLITE_OK, "Failed to prepare verification statement: %s",
+               sqlite3_errmsg(database));
+
+  res = sqlite3_bind_int(stmt, 1, orderID);
+  cr_assert_eq(res, SQLITE_OK, "Failed to bind order ID: %s",
+               sqlite3_errmsg(database));
+
+  res = sqlite3_step(stmt);
+  cr_assert_eq(res, SQLITE_DONE, "Order was not deleted from the database.");
+
+  sqlite3_finalize(stmt);
+  close_database(database);
+}

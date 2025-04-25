@@ -93,14 +93,14 @@ void echo(int socket_descriptor, pthread_mutex_t* mutex, int userID,
     if (strcasecmp(command_tokens->strings[0], "myInventory") == 0) {
       // Handle myInventory
     } else if (strcasecmp(command_tokens->strings[0], "buy") == 0) {
-      order* buy_order = create_order(command_tokens, userID);
+      order* buy_order = create_order_from_string(command_tokens, userID);
       if (buy(database, buy_order) == -1) {
         if (fputs("Can't create buy order!", comm_file) == EOF) {
           error_and_exit("Couldn't send line");
         }
       }
     } else if (strcasecmp(command_tokens->strings[0], "sell") == 0) {
-      order* sell_order = create_order(command_tokens, userID);
+      order* sell_order = create_order_from_string(command_tokens, userID);
       if (sell(database, sell_order) == -1) {
         if (fputs("Can't create buy order!", comm_file) == EOF) {
           error_and_exit("Couldn't send line");

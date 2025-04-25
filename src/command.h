@@ -39,6 +39,28 @@ int init_db(sqlite3* database);
 int close_db(sqlite3* database);
 
 /**
+ * @brief Creates a new order from a string array of parameters.
+ *
+ * This function allocates memory for a new order and initializes its fields
+ * based on the provided string array of parameters and the user ID. It
+ * parses the string values for unit price and quantity, determines whether
+ * the order is a buy or sell order, and assigns the user ID. If memory
+ * allocation fails, it returns NULL. If parsing fails for unit price or
+ * quantity, a warning is printed to the console.
+ *
+ * @param params A pointer to a string_array containing the order
+ * parameters.
+ *               - params->strings[0]: "buy" or "sell" to indicate the order
+ * type.
+ *               - params->strings[2]: The unit price as a string.
+ *               - params->strings[3]: The quantity as a string.
+ * @param userID The identifier of the user creating the order.
+ * @return A pointer to the newly created order, or NULL if memory
+ * allocation fails.
+ */
+order* create_order_from_string(string_array* params, int userID);
+
+/**
  * @brief Creates a new order with the specified parameters.
  *
  * This function allocates memory for a new order and initializes its fields
@@ -52,18 +74,19 @@ int close_db(sqlite3* database);
  * @return A pointer to the newly created order, or NULL if memory allocation
  * fails.
  */
-order* create_order(string_array* params, int userID);
+order* create_order(int item, int buyOrSell, int quantity, double unitPrice,
+                    int userID);
 
 /**
  * @brief Frees the memory allocated for an order.
  *
- * This function deallocates the memory associated with the given order. If the
- * provided order pointer is NULL, it returns -1 to indicate an error.
+ * This function deallocates the memory associated with the given order. If
+ * the provided order pointer is NULL, it returns -1 to indicate an error.
  * Otherwise, it frees the memory and returns 0 to indicate success.
  *
  * @param ord A pointer to the order to be freed.
- * @return 0 if the order was successfully freed, or -1 if the order pointer is
- * NULL.
+ * @return 0 if the order was successfully freed, or -1 if the order pointer
+ * is NULL.
  */
 int free_order(order* ord);
 
