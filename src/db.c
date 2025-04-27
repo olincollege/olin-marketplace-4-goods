@@ -368,3 +368,36 @@ int find_matching_sell(sqlite3* database, order* search_order) {
   sqlite3_finalize(stmt);
   return -1;  // Return -1 if no matching order is found
 }
+
+int update_order(sqlite3* database, order* updated_order) {
+  const char* sql =
+      "UPDATE orders SET item = ?, buyOrSell = ?, quantity = ?, unitPrice = ?, "
+      "userID = ? "
+      "WHERE orderID = ?;";
+
+  sqlite3_stmt* stmt = NULL;
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to prepare the update statement: %s\n",
+            sqlite3_errmsg(database));
+    return res;
+  }
+
+  sqlite3_bind_int(stmt, 1, updated_order->item);
+  sqlite3_bind_int(stmt, 2, updated_order->buyOrSell);
+  sqlite3_bind_int(stmt, 3, updated_order->quantity);
+  sqlite3_bind_double(stmt, 4, updated_order->unitPrice);
+  sqlite3_bind_int(stmt, 5, updated_order->userID);
+  sqlite3_bind_int(stmt, 6, updated_order->orderID);
+
+  res = sqlite3_step(stmt);
+  if (res != SQLITE_DONE) {
+    fprintf(stderr, "Failed to execute the update statement: %s\n",
+            sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return res;
+  }
+
+  sqlite3_finalize(stmt);
+  return SQLITE_OK;
+}
