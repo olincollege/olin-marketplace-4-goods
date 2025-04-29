@@ -309,3 +309,15 @@ int get_item_all_orders(sqlite3* database, int item, order** orders_out,
  * failure.
  */
 int update_order(sqlite3* database, const order* updated_order);
+
+
+/**
+ * Updates the coin balances of a user that is already a part of the database.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param updated_user Pointer to the user struct with updated balances (userID should be given).
+ * @return SQLITE_OK on success, or an SQLite error code on failure.
+ */
+int update_user_balance(sqlite3* database, const user* updated_user);
+
+
