@@ -369,9 +369,11 @@ int find_matching_sell(sqlite3* database, order* search_order) {
   return -1;  // Return -1 if no matching order is found
 }
 
-int get_item_all_orders(sqlite3* database, int item, order** orders_out, int* count_out) {
+int get_item_all_orders(sqlite3* database, int item, order** orders_out,
+                        int* count_out) {
   const char* sql =
-      "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, created_at "
+      "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, "
+      "created_at "
       "FROM orders WHERE item = ?;";
   sqlite3_stmt* stmt = NULL;
 
@@ -428,7 +430,8 @@ int get_item_all_orders(sqlite3* database, int item, order** orders_out, int* co
 
 int update_order(sqlite3* database, const order* updated_order) {
   const char* sql =
-      "UPDATE orders SET item = ?, buyOrSell = ?, quantity = ?, unitPrice = ?, userID = ? "
+      "UPDATE orders SET item = ?, buyOrSell = ?, quantity = ?, unitPrice = ?, "
+      "userID = ? "
       "WHERE orderID = ?;";
   sqlite3_stmt* stmt = NULL;
 
@@ -464,8 +467,8 @@ int update_order(sqlite3* database, const order* updated_order) {
   return SQLITE_OK;
 
 fail:
-  fprintf(stderr, "Failed to bind value for update_order: %s\n", sqlite3_errmsg(database));
+  fprintf(stderr, "Failed to bind value for update_order: %s\n",
+          sqlite3_errmsg(database));
   sqlite3_finalize(stmt);
   return res;
 }
-

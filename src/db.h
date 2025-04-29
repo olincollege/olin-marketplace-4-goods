@@ -249,12 +249,31 @@ int get_user(sqlite3* database, int userID, user* user_out);
 int find_matching_buy(sqlite3* database, order* search_order);
 
 /**
- * Retrieves an order from the database based on the given order ID.
+ * @brief Finds a matching sell order in the database for the given search
+ * order.
+ *
+ * This function queries the database to find a sell order that matches the
+ * specified criteria in the `search_order`. The matching sell order must:
+ * - Have the same item as the `search_order`.
+ * - Be a sell order (buyOrSell = 1).
+ * - Have a unit price less than or equal to the unit price of the
+ * `search_order`.
+ * - Belong to a different user (userID != search_order->userID).
+ *
+ * The function returns the `orderID` of the first matching sell order, ordered
+ * by creation time in ascending order. If no matching order is found, it
+ * returns -1.
  *
  * @param database A pointer to the SQLite database connection.
- * @param orderID The ID of the order to retrieve.
- * @param order_out A pointer to an `order` structure where the retrieved order
- * details will be stored. The `created_at` field will be dynamically allocated
+ * @param search_order A pointer to the `order` structure containing the search
+ * criteria.
+ * @return The `orderID` of the matching sell order if found, or -1 if no match
+ * is found.
+ */
+
+int find_matching_sell(sqlite3* database, order* search_order);
+
+/*
  * and must be freed by the caller.
  * @return SQLITE_OK if the order is successfully retrieved, SQLITE_NOTFOUND if
  * the order is not found, or an SQLite error code if an error occurs during the
@@ -272,18 +291,21 @@ int get_order(sqlite3* database, int orderID, order* order_out);
  *
  * @param database A pointer to the SQLite database connection.
  * @param item The CoinType (e.g., COIN_BTC, COIN_ETH).
- * @param orders_out Pointer to array of orders but memory allocated must be freed by caller.
+ * @param orders_out Pointer to array of orders but memory allocated must be
+ * freed by caller.
  * @param count_out Pointer to an integer to receive the number of orders.
  * @return SQLITE_OK on success, or an SQLite error code on failure.
  */
-int get_item_all_orders(sqlite3* database, int item, order** orders_out, int* count_out);
+int get_item_all_orders(sqlite3* database, int item, order** orders_out,
+                        int* count_out);
 
 /**
  * Updates an existing order in the "orders" table.
  *
  * @param database A pointer to the SQLite database connection.
- * @param updated_order Pointer to the updated order struct (must have orderID filled).
- * @return SQLITE_OK when it is a success, or an SQLite error code when it is a failure.
+ * @param updated_order Pointer to the updated order struct (must have orderID
+ * filled).
+ * @return SQLITE_OK when it is a success, or an SQLite error code when it is a
+ * failure.
  */
 int update_order(sqlite3* database, const order* updated_order);
-
