@@ -224,7 +224,29 @@ int sell(sqlite3* database, order* ord) {
 
 void myOrders(sqlite3* database, int userID, order** orderList,
               int* orderCount) {
-  // select_user_orders(database, userID, orderList, orderCount);
+  int result = get_user_all_orders(database, userID, orderList, orderCount);
+  if (result != SQLITE_OK) {
+    fprintf(stderr,
+            "Error: Failed to retrieve user orders. SQLite error code: %d\n",
+            result);
+    *orderList = NULL;
+    *orderCount = 0;
+  }
+}
+
+int free_order_list(order* orderList, int orderCount) {
+  if (orderList == NULL) {
+    return -1;  // Return -1 if the order list is NULL
+  }
+
+  for (int i = 0; i < orderCount; i++) {
+    if (orderList[i].created_at != NULL) {
+      free(orderList[i].created_at);  // Free the created_at string
+    }
+  }
+
+  free(orderList);  // Free the order list array
+  return 0;         // Return 0 on successful free
 }
 
 // change to return struct orders??

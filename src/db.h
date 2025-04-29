@@ -309,3 +309,21 @@ int get_item_all_orders(sqlite3* database, int item, order** orders_out,
  * failure.
  */
 int update_order(sqlite3* database, const order* updated_order);
+
+/**
+ * Retrieves all orders associated with a specific user from the database.
+ *
+ * @param database A pointer to the SQLite3 database connection.
+ * @param userID The ID of the user whose orders are to be retrieved.
+ * @param orders_out A pointer to an array of order structures where the
+ * retrieved orders will be stored. The caller is responsible for freeing the
+ * allocated memory.
+ * @param count_out A pointer to an integer where the number of retrieved orders
+ * will be stored.
+ *
+ * @return An integer indicating the success or failure of the operation.
+ *         Returns 0 on success, or a non-zero error code on failure.
+ */
+
+int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
+                        int* count_out);

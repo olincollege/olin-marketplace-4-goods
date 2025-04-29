@@ -472,3 +472,42 @@ fail:
   sqlite3_finalize(stmt);
   return res;
 }
+
+int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
+                        int* count_out) {
+  const char* sql =
+      "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, "
+      "created_at "
+      "FROM orders WHERE userID = ?;";
+  sqlite3_stmt* stmt = NULL;
+
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to prepare the get_user_all_orders statement: %s\n",
+            sqlite3_errmsg(database));
+    return res;
+  }
+
+  sqlite3_bind_int(stmt, 1, userID);
+
+  int count = 0;
+
+  while ((res = sqlite3_step(stmt)) == SQLITE_ROW) {
+    orders_out[count].orderID = sqlite3_column_int(stmt, 0);
+    orders_out[count].item = sqlite3_column_int(stmt, 1);
+    orders_out[count].buyOrSell = sqlite3_column_int(stmt, 2);
+    orders_out[count].quantity = sqlite3_column_int(stmt, 3);
+    orders_out[count].unitPrice = sqlite3_column_double(stmt, 4);
+    orders_out[count].userID = sqlite3_column_int(stmt, 5);
+    const unsigned char* created_at = sqlite3_column_text(stmt, 6);
+    orders_out[count].created_at = strdup((const char*)created_at);
+
+    count++;
+  }
+
+  sqlite3_finalize(stmt);
+
+  *count_out = count;
+
+  return SQLITE_OK;
+}
