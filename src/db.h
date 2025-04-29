@@ -258,7 +258,7 @@ int find_matching_buy(sqlite3* database, order* search_order);
  * and must be freed by the caller.
  * @return SQLITE_OK if the order is successfully retrieved, SQLITE_NOTFOUND if
  * the order is not found, or an SQLite error code if an error occurs during the
- * operation.
+ * retrieving process.
  *
  * This function prepares and executes an SQL query to fetch the order details
  * from the `orders` table. If the order is found, its details are populated
@@ -266,3 +266,24 @@ int find_matching_buy(sqlite3* database, order* search_order);
  * appropriate error messages are printed to `stderr`.
  */
 int get_order(sqlite3* database, int orderID, order* order_out);
+
+/**
+ * Retrieves all orders involving a specific item exchanged.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param item The CoinType (e.g., COIN_BTC, COIN_ETH).
+ * @param orders_out Pointer to array of orders but memory allocated must be freed by caller.
+ * @param count_out Pointer to an integer to receive the number of orders.
+ * @return SQLITE_OK on success, or an SQLite error code on failure.
+ */
+int get_item_all_orders(sqlite3* database, int item, order** orders_out, int* count_out);
+
+/**
+ * Updates an existing order in the "orders" table.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param updated_order Pointer to the updated order struct (must have orderID filled).
+ * @return SQLITE_OK when it is a success, or an SQLite error code when it is a failure.
+ */
+int update_order(sqlite3* database, const order* updated_order);
+
