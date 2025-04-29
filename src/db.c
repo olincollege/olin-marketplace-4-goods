@@ -509,6 +509,46 @@ fail:
   return res;
 }
 
+int update_user_balance ( sqlite3* database, const user* updated_user) {
+
+  const char* sql = "UPDATE users SET OMG = ?, DOGE = ?, BTC = ?, ETH = ? WHERE userID = ?;";
+  sqlite3_stmt* stmt = NULL; 
+
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, " Unable to prepare the update_user_balance statement: %s/n",
+      sqlite3_errmsg(database));
+    return res;
+  } 
+
+  res = sqlite3_bind_int(stmt, 1, updated_user->OMG);
+  if (res != SQLITE_OK) goto fail;
+  res = sqlite3_bind_int(stmt, 2, updated_user->DOGE);
+  if (res != SQLITE_OK) goto fail;
+  res = sqlite3_bind_int(stmt, 3, updated_user->BTC);
+  if (res != SQLITE_OK) goto fail;
+  res = sqlite3_bind_int(stmt, 4, updated_user->ETH);
+  if (res != SQLITE_OK) goto fail;
+  res = sqlite3_bind_int(stmt, 5, updated_user->userID);
+  if (res != SQLITE_OK) goto fail;
+
+  res = sqlite3_step(stmt);
+  if (res != SQLITE_DONE) {
+    fprintf(stderr, "Failed to execute the update_user_balance statement: %s\n",
+            sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return res;
+  }
+
+  sqlite3_finalize(stmt);
+  return SQLITE_OK;
+
+fail:
+  fprintf(stderr, "Failed to bind value for update_user_balance: %s\n", sqlite3_errmsg(database));
+  sqlite3_finalize(stmt);
+  return res;
+}
+
 int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
                         int* count_out) {
   const char* sql =
