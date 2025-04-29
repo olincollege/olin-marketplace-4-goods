@@ -287,17 +287,23 @@ int find_matching_sell(sqlite3* database, order* search_order);
 int get_order(sqlite3* database, int orderID, order* order_out);
 
 /**
- * Retrieves all orders involving a specific item exchanged.
+ * Retrieves the top 5 buy and sell orders for a specific item.
  *
  * @param database A pointer to the SQLite database connection.
  * @param item The CoinType (e.g., COIN_BTC, COIN_ETH).
- * @param orders_out Pointer to array of orders but memory allocated must be
- * freed by caller.
- * @param count_out Pointer to an integer to receive the number of orders.
+ * @param buy_orders_out Pointer to an array of buy orders. Memory is allocated
+ *                       and must be freed by the caller.
+ * @param buy_count_out Pointer to an integer to receive the number of buy
+ * orders.
+ * @param sell_orders_out Pointer to an array of sell orders. Memory is
+ * allocated and must be freed by the caller.
+ * @param sell_count_out Pointer to an integer to receive the number of sell
+ * orders.
  * @return SQLITE_OK on success, or an SQLite error code on failure.
  */
-int get_item_all_orders(sqlite3* database, int item, order** orders_out,
-                        int* count_out);
+int get_item_all_orders(sqlite3* database, int item, order** buy_orders_out,
+                        int* buy_count_out, order** sell_orders_out,
+                        int* sell_count_out);
 
 /**
  * Updates an existing order in the "orders" table.
@@ -310,7 +316,6 @@ int get_item_all_orders(sqlite3* database, int item, order** orders_out,
  */
 int update_order(sqlite3* database, const order* updated_order);
 
-
 /**
  * Updates the coin balances of a user that is already a part of the database.
  *
@@ -320,4 +325,20 @@ int update_order(sqlite3* database, const order* updated_order);
  */
 int update_user_balance(sqlite3* database, const user* updated_user);
 
+/**
+ * Retrieves all orders associated with a specific user from the database.
+ *
+ * @param database A pointer to the SQLite3 database connection.
+ * @param userID The ID of the user whose orders are to be retrieved.
+ * @param orders_out A pointer to an array of order structures where the
+ * retrieved orders will be stored. The caller is responsible for freeing the
+ * allocated memory.
+ * @param count_out A pointer to an integer where the number of retrieved orders
+ * will be stored.
+ *
+ * @return An integer indicating the success or failure of the operation.
+ *         Returns 0 on success, or a non-zero error code on failure.
+ */
 
+int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
+                        int* count_out);

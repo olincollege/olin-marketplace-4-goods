@@ -257,7 +257,6 @@ Test(test_orders, test_delete_order) {
   sqlite3_finalize(stmt);
   close_database(database);
 }
-
 Test(test_orders, test_get_item_all_orders) {
   // Open database
   sqlite3* database = open_database();
@@ -268,42 +267,124 @@ Test(test_orders, test_get_item_all_orders) {
   create_tables(database);
 
   // Insert a user (required for foreign key constraint)
-  const char* insert_user_sql = "INSERT INTO users (name) VALUES ('Test User');";
+  const char* insert_user_sql =
+      "INSERT INTO users (name) VALUES ('Test User');";
   char* errMsg = NULL;
   int res = sqlite3_exec(database, insert_user_sql, NULL, NULL, &errMsg);
   cr_assert_eq(res, SQLITE_OK, "Failed to insert user: %s", errMsg);
   sqlite3_free(errMsg);
 
-  // Insert multiple orders
-  order order1 = {.item = COIN_BTC, .buyOrSell = BUY, .quantity = 5, .unitPrice = 100.0, .userID = 1};
-  order order2 = {.item = COIN_BTC, .buyOrSell = SELL, .quantity = 3, .unitPrice = 90.0, .userID = 1};
-  order order3 = {.item = COIN_ETH, .buyOrSell = BUY, .quantity = 2, .unitPrice = 200.0, .userID = 1};
+  // Insert multiple orders (more than 5 for both buy and sell)
+  order orders[] = {
+      {.item = COIN_BTC,
+       .buyOrSell = BUY,
+       .quantity = 5,
+       .unitPrice = 100.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = BUY,
+       .quantity = 10,
+       .unitPrice = 110.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = BUY,
+       .quantity = 15,
+       .unitPrice = 120.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = BUY,
+       .quantity = 20,
+       .unitPrice = 130.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = BUY,
+       .quantity = 25,
+       .unitPrice = 140.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = BUY,
+       .quantity = 30,
+       .unitPrice = 150.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = SELL,
+       .quantity = 3,
+       .unitPrice = 90.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = SELL,
+       .quantity = 6,
+       .unitPrice = 80.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = SELL,
+       .quantity = 9,
+       .unitPrice = 70.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = SELL,
+       .quantity = 12,
+       .unitPrice = 60.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = SELL,
+       .quantity = 15,
+       .unitPrice = 50.0,
+       .userID = 1},
+      {.item = COIN_BTC,
+       .buyOrSell = SELL,
+       .quantity = 18,
+       .unitPrice = 40.0,
+       .userID = 1},
+  };
 
-  res = insert_order(database, &order1);
-  cr_assert_eq(res, SQLITE_OK, "Failed to insert order1: %d", res);
-  res = insert_order(database, &order2);
-  cr_assert_eq(res, SQLITE_OK, "Failed to insert order2: %d", res);
-  res = insert_order(database, &order3);
-  cr_assert_eq(res, SQLITE_OK, "Failed to insert order3: %d", res);
+  for (int i = 0; i < sizeof(orders) / sizeof(orders[0]); i++) {
+    res = insert_order(database, &orders[i]);
+    cr_assert_eq(res, SQLITE_OK, "Failed to insert order %d: %d", i + 1, res);
+  }
 
   // Test get_item_all_orders
-  order* order_list = NULL;
-  int order_count = 0;
-  res = get_item_all_orders(database, COIN_BTC, &order_list, &order_count);
+  order* buy_orders = NULL;
+  int buy_count = 0;
+  order* sell_orders = NULL;
+  int sell_count = 0;
+
+  res = get_item_all_orders(database, COIN_BTC, &buy_orders, &buy_count,
+                            &sell_orders, &sell_count);
   cr_assert_eq(res, SQLITE_OK, "get_item_all_orders failed: %d", res);
-  cr_assert_eq(order_count, 2, "Expected 2 BTC orders, but got %d", order_count);
-  cr_assert_not_null(order_list, "Returned order list should not be NULL");
 
-  // Check the returned orders' item types
-  for (int i = 0; i < order_count; i++) {
-    cr_assert_eq(order_list[i].item, COIN_BTC, "Order item is not COIN_BTC");
+  // Verify buy orders
+  cr_assert_eq(buy_count, 5, "Expected 5 buy orders, but got %d", buy_count);
+  cr_assert_not_null(buy_orders, "Returned buy order list should not be NULL");
+  printf("Top 5 Buy Orders:\n");
+  for (int i = 0; i < buy_count; i++) {
+    printf(
+        "Buy Order %d: orderID=%d, item=%d, buyOrSell=%d, quantity=%d, "
+        "unitPrice=%.2f, userID=%d, created_at=%s\n",
+        i + 1, buy_orders[i].orderID, buy_orders[i].item,
+        buy_orders[i].buyOrSell, buy_orders[i].quantity,
+        buy_orders[i].unitPrice, buy_orders[i].userID,
+        buy_orders[i].created_at);
+    free(buy_orders[i].created_at);
   }
+  free(buy_orders);
 
-  // Cleanup
-  for (int i = 0; i < order_count; i++) {
-    free(order_list[i].created_at);
+  // Verify sell orders
+  cr_assert_eq(sell_count, 5, "Expected 5 sell orders, but got %d", sell_count);
+  cr_assert_not_null(sell_orders,
+                     "Returned sell order list should not be NULL");
+  printf("Top 5 Sell Orders:\n");
+  for (int i = 0; i < sell_count; i++) {
+    printf(
+        "Sell Order %d: orderID=%d, item=%d, buyOrSell=%d, quantity=%d, "
+        "unitPrice=%.2f, userID=%d, created_at=%s\n",
+        i + 1, sell_orders[i].orderID, sell_orders[i].item,
+        sell_orders[i].buyOrSell, sell_orders[i].quantity,
+        sell_orders[i].unitPrice, sell_orders[i].userID,
+        sell_orders[i].created_at);
+    free(sell_orders[i].created_at);
   }
-  free(order_list);
+  free(sell_orders);
 
   close_database(database);
 }
@@ -318,7 +399,8 @@ Test(test_orders, test_update_order) {
   create_tables(database);
 
   // Insert a user to satisfy foreign key constraint
-  const char* insert_user_sql = "INSERT INTO users (name) VALUES ('Test User');";
+  const char* insert_user_sql =
+      "INSERT INTO users (name) VALUES ('Test User');";
   char* errMsg = NULL;
   int res = sqlite3_exec(database, insert_user_sql, NULL, NULL, &errMsg);
   cr_assert_eq(res, SQLITE_OK, "Failed to insert user: %s", errMsg);
@@ -339,7 +421,8 @@ Test(test_orders, test_update_order) {
   const char* select_sql = "SELECT orderID FROM orders;";
   sqlite3_stmt* stmt = NULL;
   res = sqlite3_prepare_v2(database, select_sql, -1, &stmt, NULL);
-  cr_assert_eq(res, SQLITE_OK, "Failed to prepare select statement: %s", sqlite3_errmsg(database));
+  cr_assert_eq(res, SQLITE_OK, "Failed to prepare select statement: %s",
+               sqlite3_errmsg(database));
 
   res = sqlite3_step(stmt);
   cr_assert_eq(res, SQLITE_ROW, "No order inserted to fetch ID.");
@@ -350,33 +433,41 @@ Test(test_orders, test_update_order) {
   // Update the order
   order updated_order = {
       .orderID = orderID,
-      .item = COIN_ETH,       // Change to ETH
-      .buyOrSell = SELL,      // Change to SELL
-      .quantity = 20,         // Update quantity
-      .unitPrice = 150.0,     // Update price
-      .userID = 1,            // Same user
+      .item = COIN_ETH,    // Change to ETH
+      .buyOrSell = SELL,   // Change to SELL
+      .quantity = 20,      // Update quantity
+      .unitPrice = 150.0,  // Update price
+      .userID = 1,         // Same user
   };
 
   res = update_order(database, &updated_order);
   cr_assert_eq(res, SQLITE_OK, "update_order failed: %d", res);
 
   // Verify the update
-  const char* verify_sql = 
-      "SELECT item, buyOrSell, quantity, unitPrice, userID FROM orders WHERE orderID = ?;";
+  const char* verify_sql =
+      "SELECT item, buyOrSell, quantity, unitPrice, userID FROM orders WHERE "
+      "orderID = ?;";
   res = sqlite3_prepare_v2(database, verify_sql, -1, &stmt, NULL);
-  cr_assert_eq(res, SQLITE_OK, "Failed to prepare verification select: %s", sqlite3_errmsg(database));
+  cr_assert_eq(res, SQLITE_OK, "Failed to prepare verification select: %s",
+               sqlite3_errmsg(database));
 
   res = sqlite3_bind_int(stmt, 1, orderID);
-  cr_assert_eq(res, SQLITE_OK, "Failed to bind order ID: %s", sqlite3_errmsg(database));
+  cr_assert_eq(res, SQLITE_OK, "Failed to bind order ID: %s",
+               sqlite3_errmsg(database));
 
   res = sqlite3_step(stmt);
   cr_assert_eq(res, SQLITE_ROW, "No order found with given ID after update.");
 
-  cr_assert_eq(sqlite3_column_int(stmt, 0), updated_order.item, "Updated item does not match.");
-  cr_assert_eq(sqlite3_column_int(stmt, 1), updated_order.buyOrSell, "Updated buyOrSell does not match.");
-  cr_assert_eq(sqlite3_column_int(stmt, 2), updated_order.quantity, "Updated quantity does not match.");
-  cr_assert_float_eq(sqlite3_column_double(stmt, 3), updated_order.unitPrice, 0.001, "Updated unitPrice does not match.");
-  cr_assert_eq(sqlite3_column_int(stmt, 4), updated_order.userID, "Updated userID does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 0), updated_order.item,
+               "Updated item does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 1), updated_order.buyOrSell,
+               "Updated buyOrSell does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 2), updated_order.quantity,
+               "Updated quantity does not match.");
+  cr_assert_float_eq(sqlite3_column_double(stmt, 3), updated_order.unitPrice,
+                     0.001, "Updated unitPrice does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 4), updated_order.userID,
+               "Updated userID does not match.");
 
   sqlite3_finalize(stmt);
   close_database(database);
@@ -486,4 +577,71 @@ Test(test_orders, test_find_matching_buy) {
   sqlite3_finalize(stmt);
   close_database(database);
 }
+Test(test_orders, test_get_user_all_orders) {
+  // Open database
+  sqlite3* database = open_database();
+  cr_assert_not_null(database, "Database connection should not be NULL");
 
+  // Reset tables
+  drop_all_tables(database);
+  create_tables(database);
+
+  // Insert a user (required for foreign key constraint)
+  user new_user = {
+      .userID = 1,
+      .name = "Test User",
+      .OMG = 100,
+      .DOGE = 200,
+      .BTC = 50,
+      .ETH = 75,
+  };
+
+  int res = insert_user(database, &new_user);
+  cr_assert_eq(res, SQLITE_OK, "insert_user failed: %d", res);
+
+  // Insert multiple orders for the user
+  order order1 = {.item = COIN_BTC,
+                  .buyOrSell = BUY,
+                  .quantity = 5,
+                  .unitPrice = 100.0,
+                  .userID = new_user.userID};
+  order order2 = {.item = COIN_BTC,
+                  .buyOrSell = SELL,
+                  .quantity = 3,
+                  .unitPrice = 90.0,
+                  .userID = new_user.userID};
+  order order3 = {.item = COIN_ETH,
+                  .buyOrSell = BUY,
+                  .quantity = 2,
+                  .unitPrice = 200.0,
+                  .userID = new_user.userID};
+
+  res = insert_order(database, &order1);
+  cr_assert_eq(res, SQLITE_OK, "Failed to insert order1: %d", res);
+  res = insert_order(database, &order2);
+  cr_assert_eq(res, SQLITE_OK, "Failed to insert order2: %d", res);
+  res = insert_order(database, &order3);
+  cr_assert_eq(res, SQLITE_OK, "Failed to insert order3: %d", res);
+
+  // Test get_user_all_orders
+  order orders[10];  // Allocate space for up to 10 orders
+  int order_count = 0;
+  res = get_user_all_orders(database, new_user.userID, orders, &order_count);
+  cr_assert_eq(res, SQLITE_OK, "get_user_all_orders failed: %d", res);
+  cr_assert_eq(order_count, 3, "Expected 3 orders for the user, but got %d",
+               order_count);
+
+  // Dump all orders for verification
+  printf("Dumping all orders for user ID %d:\n", new_user.userID);
+  for (int i = 0; i < order_count; i++) {
+    printf(
+        "Order %d: orderID=%d, item=%d, buyOrSell=%d, quantity=%d, "
+        "unitPrice=%.2f, userID=%d, created_at=%s\n",
+        i + 1, orders[i].orderID, orders[i].item, orders[i].buyOrSell,
+        orders[i].quantity, orders[i].unitPrice, orders[i].userID,
+        orders[i].created_at);
+    free(orders[i].created_at);  // Free the allocated created_at string
+  }
+
+  close_database(database);
+}

@@ -369,61 +369,97 @@ int find_matching_sell(sqlite3* database, order* search_order) {
   return -1;  // Return -1 if no matching order is found
 }
 
-int get_item_all_orders(sqlite3* database, int item, order** orders_out,
-                        int* count_out) {
-  const char* sql =
+int get_item_all_orders(sqlite3* database, int item, order** buy_orders_out,
+                        int* buy_count_out, order** sell_orders_out,
+                        int* sell_count_out) {
+  const char* buy_sql =
       "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, "
       "created_at "
-      "FROM orders WHERE item = ?;";
-  sqlite3_stmt* stmt = NULL;
+      "FROM orders WHERE item = ? AND buyOrSell = 0 "
+      "ORDER BY unitPrice DESC LIMIT 5;";
+  const char* sell_sql =
+      "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, "
+      "created_at "
+      "FROM orders WHERE item = ? AND buyOrSell = 1 "
+      "ORDER BY unitPrice DESC LIMIT 5;";
 
-  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  sqlite3_stmt* stmt = NULL;
+  int res;
+
+  // Fetch top 5 buy orders
+  res = sqlite3_prepare_v2(database, buy_sql, -1, &stmt, NULL);
   if (res != SQLITE_OK) {
-    fprintf(stderr, "Failed to create the get_item_all_orders statement: %s\n",
+    fprintf(stderr, "Failed to create the buy orders statement: %s\n",
             sqlite3_errmsg(database));
     return res;
   }
 
   sqlite3_bind_int(stmt, 1, item);
 
-  int capacity = 10;
-  int count = 0;
-  order* orders = (order*)malloc(sizeof(order) * capacity);
-  if (orders == NULL) {
-    fprintf(stderr, "Unable to allocate memory for orders.\n");
+  int buy_capacity = 5;
+  int buy_count = 0;
+  order* buy_orders = (order*)malloc(sizeof(order) * buy_capacity);
+  if (buy_orders == NULL) {
+    fprintf(stderr, "Unable to allocate memory for buy orders.\n");
     sqlite3_finalize(stmt);
     return SQLITE_NOMEM;
   }
 
   while ((res = sqlite3_step(stmt)) == SQLITE_ROW) {
-    if (count >= capacity) {
-      capacity *= 2;
-      order* temp = (order*)realloc(orders, sizeof(order) * capacity);
-      if (temp == NULL) {
-        fprintf(stderr, "Unable to reallocate memory for orders.\n");
-        free(orders);
-        sqlite3_finalize(stmt);
-        return SQLITE_NOMEM;
-      }
-      orders = temp;
-    }
-
-    orders[count].orderID = sqlite3_column_int(stmt, 0);
-    orders[count].item = sqlite3_column_int(stmt, 1);
-    orders[count].buyOrSell = sqlite3_column_int(stmt, 2);
-    orders[count].quantity = sqlite3_column_int(stmt, 3);
-    orders[count].unitPrice = sqlite3_column_double(stmt, 4);
-    orders[count].userID = sqlite3_column_int(stmt, 5);
+    buy_orders[buy_count].orderID = sqlite3_column_int(stmt, 0);
+    buy_orders[buy_count].item = sqlite3_column_int(stmt, 1);
+    buy_orders[buy_count].buyOrSell = sqlite3_column_int(stmt, 2);
+    buy_orders[buy_count].quantity = sqlite3_column_int(stmt, 3);
+    buy_orders[buy_count].unitPrice = sqlite3_column_double(stmt, 4);
+    buy_orders[buy_count].userID = sqlite3_column_int(stmt, 5);
     const unsigned char* created_at = sqlite3_column_text(stmt, 6);
-    orders[count].created_at = strdup((const char*)created_at);
+    buy_orders[buy_count].created_at = strdup((const char*)created_at);
 
-    count++;
+    buy_count++;
   }
 
   sqlite3_finalize(stmt);
 
-  *orders_out = orders;
-  *count_out = count;
+  // Fetch top 5 sell orders
+  res = sqlite3_prepare_v2(database, sell_sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to create the sell orders statement: %s\n",
+            sqlite3_errmsg(database));
+    free(buy_orders);
+    return res;
+  }
+
+  sqlite3_bind_int(stmt, 1, item);
+
+  int sell_capacity = 5;
+  int sell_count = 0;
+  order* sell_orders = (order*)malloc(sizeof(order) * sell_capacity);
+  if (sell_orders == NULL) {
+    fprintf(stderr, "Unable to allocate memory for sell orders.\n");
+    free(buy_orders);
+    sqlite3_finalize(stmt);
+    return SQLITE_NOMEM;
+  }
+
+  while ((res = sqlite3_step(stmt)) == SQLITE_ROW) {
+    sell_orders[sell_count].orderID = sqlite3_column_int(stmt, 0);
+    sell_orders[sell_count].item = sqlite3_column_int(stmt, 1);
+    sell_orders[sell_count].buyOrSell = sqlite3_column_int(stmt, 2);
+    sell_orders[sell_count].quantity = sqlite3_column_int(stmt, 3);
+    sell_orders[sell_count].unitPrice = sqlite3_column_double(stmt, 4);
+    sell_orders[sell_count].userID = sqlite3_column_int(stmt, 5);
+    const unsigned char* created_at = sqlite3_column_text(stmt, 6);
+    sell_orders[sell_count].created_at = strdup((const char*)created_at);
+
+    sell_count++;
+  }
+
+  sqlite3_finalize(stmt);
+
+  *buy_orders_out = buy_orders;
+  *buy_count_out = buy_count;
+  *sell_orders_out = sell_orders;
+  *sell_count_out = sell_count;
 
   return SQLITE_OK;
 }
@@ -513,3 +549,41 @@ fail:
   return res;
 }
 
+int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
+                        int* count_out) {
+  const char* sql =
+      "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, "
+      "created_at "
+      "FROM orders WHERE userID = ?;";
+  sqlite3_stmt* stmt = NULL;
+
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to prepare the get_user_all_orders statement: %s\n",
+            sqlite3_errmsg(database));
+    return res;
+  }
+
+  sqlite3_bind_int(stmt, 1, userID);
+
+  int count = 0;
+
+  while ((res = sqlite3_step(stmt)) == SQLITE_ROW) {
+    orders_out[count].orderID = sqlite3_column_int(stmt, 0);
+    orders_out[count].item = sqlite3_column_int(stmt, 1);
+    orders_out[count].buyOrSell = sqlite3_column_int(stmt, 2);
+    orders_out[count].quantity = sqlite3_column_int(stmt, 3);
+    orders_out[count].unitPrice = sqlite3_column_double(stmt, 4);
+    orders_out[count].userID = sqlite3_column_int(stmt, 5);
+    const unsigned char* created_at = sqlite3_column_text(stmt, 6);
+    orders_out[count].created_at = strdup((const char*)created_at);
+
+    count++;
+  }
+
+  sqlite3_finalize(stmt);
+
+  *count_out = count;
+
+  return SQLITE_OK;
+}
