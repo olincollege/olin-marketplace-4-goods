@@ -249,5 +249,14 @@ int free_order_list(order* orderList, int orderCount) {
   return 0;         // Return 0 on successful free
 }
 
-// change to return struct orders??
-order* view(int itemID) {}
+void viewItemOrders(sqlite3* database, int itemID, order** buy_orders,
+                    int* buy_count, order** sell_orders, int* sell_count) {
+  int result = get_item_all_orders(database, itemID, buy_orders, buy_count,
+                                   sell_orders, sell_count);
+  if (result != SQLITE_OK) {
+    fprintf(stderr,
+            "Error: Failed to retrieve item orders. SQLite error code: %d\n",
+            result);
+    return;
+  }
+}
