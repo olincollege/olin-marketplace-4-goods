@@ -59,6 +59,19 @@ order* create_order_from_string(string_array* params, int userID) {
     printf("Conversion failed for unitPrice\n");
   }
 
+  if (strcasecmp(params->strings[1], "omg") == 0) {
+    new_order->item = COIN_OMG;
+  } else if (strcasecmp(params->strings[1], "doge") == 0) {
+    new_order->item = COIN_DOGE;
+  } else if (strcasecmp(params->strings[1], "btc") == 0) {
+    new_order->item = COIN_BTC;
+  } else if (strcasecmp(params->strings[1], "eth") == 0) {
+    new_order->item = COIN_ETH;
+  } else {
+    printf("Invalid item type: %s\n", params->strings[1]);
+    return NULL;
+  }
+
   // Determine buy or sell
   new_order->buyOrSell = (strcasecmp(params->strings[0], "buy") == 0) ? 0 : 1;
 

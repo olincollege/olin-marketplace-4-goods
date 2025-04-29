@@ -84,6 +84,7 @@ void echo(int socket_descriptor, pthread_mutex_t* mutex, int userID,
   }
 
   while (!feof(comm_file)) {
+    dump_database(database);
     char* buffer = NULL;
     size_t buf_size = 0;
     if (getline(&buffer, &buf_size, comm_file) == -1) {

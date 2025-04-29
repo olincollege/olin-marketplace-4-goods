@@ -11,12 +11,24 @@
 int main(void) {
   // Spin up database
   sqlite3* db_ptr = NULL;
-  if (init_db(&db_ptr) == -1) {
+  if (open_db(&db_ptr) == -1) {
+    error_and_exit("Can't open databse!");
+  }
+  if (init_db(db_ptr) == -1) {
     error_and_exit("Can't initialize database!");
   }
 
   // Get userID
-  int userID;
+  int userID = 1;
+  user new_user = {
+      .userID = 1,
+      .name = "Test User",
+      .OMG = 100,
+      .DOGE = 200,
+      .BTC = 50,
+      .ETH = 75,
+  };
+  int res = insert_user(db_ptr, &new_user);
 
   pthread_mutex_t* mutex;
   mutex = mmap(NULL, sizeof(pthread_mutex_t), PROT_READ | PROT_WRITE,
