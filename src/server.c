@@ -47,8 +47,7 @@ void listen_for_connections(echo_server* server) {
   }
 }
 
-int accept_client(echo_server* server, pthread_mutex_t* mutex, int userID,
-                  sqlite3* database) {
+int accept_client(echo_server* server, int userID, sqlite3* database) {
   struct sockaddr_storage client_addr;
   unsigned int address_size = sizeof(client_addr);
   int connect_d = accept4(server->listener, (struct sockaddr*)&client_addr,
@@ -57,14 +56,14 @@ int accept_client(echo_server* server, pthread_mutex_t* mutex, int userID,
     error_and_exit("Can't open secondary socket");
   }
   if (!fork()) {
-    echo(connect_d, mutex, userID, database);
+    authenticate();
+    echo(connect_d, userID, database);
     return -1;
   }
   return 0;
 }
 
-void echo(int socket_descriptor, pthread_mutex_t* mutex, int userID,
-          sqlite3* database) {
+void echo(int socket_descriptor, int userID, sqlite3* database) {
   FILE* comm_file = fdopen(socket_descriptor, "r+");
   if (comm_file == NULL) {
     error_and_exit("Can't open file");
@@ -86,14 +85,18 @@ void echo(int socket_descriptor, pthread_mutex_t* mutex, int userID,
   while (!feof(comm_file)) {
     dump_database(database);
     char* buffer = NULL;
+    char* send_line = NULL;
     size_t buf_size = 0;
     if (getline(&buffer, &buf_size, comm_file) == -1) {
       error_and_exit("Can't get line");
     }
+    // Process the command
     string_array* command_tokens = tokenize_line(buffer);
     if (strcasecmp(command_tokens->strings[0], "myInventory") == 0) {
       // Handle myInventory
+
     } else if (strcasecmp(command_tokens->strings[0], "buy") == 0) {
+      // Handle buy
       order* buy_order = create_order_from_string(command_tokens, userID);
       if (buy(database, buy_order) == -1) {
         if (fputs("Can't create buy order!", comm_file) == EOF) {
