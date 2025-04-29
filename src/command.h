@@ -170,3 +170,18 @@ void myOrders(sqlite3* database, int userID, order** orderList,
  */
 void viewItemOrders(sqlite3* database, int itemID, order** buy_orders,
                     int* buy_count, order** sell_orders, int* sell_count);
+
+/**
+ * @brief Retrieves the inventory of a specific user from the database.
+ *
+ * This function fetches the inventory associated with the given user by
+ * delegating the operation to the `get_user_inventories` function.
+ *
+ * @param database A pointer to the SQLite3 database connection.
+ * @param usr A pointer to the user structure representing the user whose
+ *            inventory is to be retrieved.
+ * @return An integer indicating the result of the operation. The exact
+ *         meaning of the return value depends on the implementation of
+ *         `get_user_inventories`.
+ */
+int get_user_inventory(sqlite3* database, user* usr);
