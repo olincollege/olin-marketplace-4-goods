@@ -8,6 +8,7 @@
     "stdlib.h": "c",
     "typeinfo": "c",
     "command.h": "c",
-    "criterion.h": "c"
+    "criterion.h": "c",
+    "unistd.h": "c"
   }
 }

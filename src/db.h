@@ -221,6 +221,91 @@ int delete_order(sqlite3* database, int orderID);
  * @param database A pointer to the SQLite database connection.
  * @param userID The ID of the user to retrieve.
  * @param user_out A pointer to a user struct to populate.
- * @return SQLITE_OK if found, SQLITE_NOTFOUND if not, or another SQLite error code.
+ * @return SQLITE_OK if found, SQLITE_NOTFOUND if not, or another SQLite error
+ * code.
  */
 int get_user(sqlite3* database, int userID, user* user_out);
+
+/**
+ * Finds a matching buy order in the database for the given search order.
+ *
+ * This function searches for a buy order in the "orders" table that matches
+ * the specified criteria:
+ * - The item matches the item in the search order.
+ * - The order is a buy order (buyOrSell = 0).
+ * - The unit price is greater than or equal to the unit price in the search
+ * order.
+ * - The user ID is different from the user ID in the search order.
+ *
+ * The matching order is selected based on the earliest creation time
+ * (ordered by `created_at` in ascending order) and is limited to one result.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param search_order A pointer to the `order` structure containing the search
+ * criteria.
+ * @return The `orderID` of the matching buy order if found, or -1 if no
+ * matching order is found or if an error occurs during the query.
+ */
+int find_matching_buy(sqlite3* database, order* search_order);
+
+/**
+ * @brief Finds a matching sell order in the database for the given search
+ * order.
+ *
+ * This function queries the database to find a sell order that matches the
+ * specified criteria in the `search_order`. The matching sell order must:
+ * - Have the same item as the `search_order`.
+ * - Be a sell order (buyOrSell = 1).
+ * - Have a unit price less than or equal to the unit price of the
+ * `search_order`.
+ * - Belong to a different user (userID != search_order->userID).
+ *
+ * The function returns the `orderID` of the first matching sell order, ordered
+ * by creation time in ascending order. If no matching order is found, it
+ * returns -1.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param search_order A pointer to the `order` structure containing the search
+ * criteria.
+ * @return The `orderID` of the matching sell order if found, or -1 if no match
+ * is found.
+ */
+
+int find_matching_sell(sqlite3* database, order* search_order);
+
+/*
+ * and must be freed by the caller.
+ * @return SQLITE_OK if the order is successfully retrieved, SQLITE_NOTFOUND if
+ * the order is not found, or an SQLite error code if an error occurs during the
+ * retrieving process.
+ *
+ * This function prepares and executes an SQL query to fetch the order details
+ * from the `orders` table. If the order is found, its details are populated
+ * into the `order_out` structure. If the order is not found or an error occurs,
+ * appropriate error messages are printed to `stderr`.
+ */
+int get_order(sqlite3* database, int orderID, order* order_out);
+
+/**
+ * Retrieves all orders involving a specific item exchanged.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param item The CoinType (e.g., COIN_BTC, COIN_ETH).
+ * @param orders_out Pointer to array of orders but memory allocated must be
+ * freed by caller.
+ * @param count_out Pointer to an integer to receive the number of orders.
+ * @return SQLITE_OK on success, or an SQLite error code on failure.
+ */
+int get_item_all_orders(sqlite3* database, int item, order** orders_out,
+                        int* count_out);
+
+/**
+ * Updates an existing order in the "orders" table.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param updated_order Pointer to the updated order struct (must have orderID
+ * filled).
+ * @return SQLITE_OK when it is a success, or an SQLite error code when it is a
+ * failure.
+ */
+int update_order(sqlite3* database, const order* updated_order);

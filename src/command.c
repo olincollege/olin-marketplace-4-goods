@@ -147,9 +147,93 @@ int free_user(user* usr) {
   return 0;   // Return 0 on successful free
 }
 
-int buy(sqlite3* database, order* ord) { return insert_order(database, ord); }
+int buy(sqlite3* database, order* ord) {
+  int result = find_matching_sell(database, ord);
+  if (result == -1) {
+    return insert_order(database, ord);
+  }
+  order matched_order;
+  if (get_order(database, result, &matched_order) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve matching order.\n");
+    return -1;
+  }
 
-int sell(sqlite3* database, order* ord) { return insert_order(database, ord); }
+  // Update quantities
+  if (ord->quantity > matched_order.quantity) {
+    ord->quantity -= matched_order.quantity;
+    matched_order.quantity = 0;
+  } else {
+    matched_order.quantity -= ord->quantity;
+    ord->quantity = 0;
+  }
+
+  // Delete or update the matched order
+  if (matched_order.quantity == 0) {
+    if (delete_order(database, matched_order.orderID) != 0) {
+      fprintf(stderr, "Error: Failed to delete matched order.\n");
+      return -1;
+    }
+  } else {
+    if (update_order(database, &matched_order) != 0) {
+      fprintf(stderr, "Error: Failed to update matched order.\n");
+      return -1;
+    }
+  }
+
+  // Insert the remaining order if not fully matched
+  if (ord->quantity > 0) {
+    if (insert_order(database, ord) != 0) {
+      fprintf(stderr, "Error: Failed to insert remaining order.\n");
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+int sell(sqlite3* database, order* ord) {
+  int result = find_matching_buy(database, ord);
+  if (result == -1) {
+    return insert_order(database, ord);
+  }
+  order matched_order;
+  if (get_order(database, result, &matched_order) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve matching order.\n");
+    return -1;
+  }
+
+  // Update quantities
+  if (ord->quantity > matched_order.quantity) {
+    ord->quantity -= matched_order.quantity;
+    matched_order.quantity = 0;
+  } else {
+    matched_order.quantity -= ord->quantity;
+    ord->quantity = 0;
+  }
+
+  // Delete or update the matched order
+  if (matched_order.quantity == 0) {
+    if (delete_order(database, matched_order.orderID) != 0) {
+      fprintf(stderr, "Error: Failed to delete matched order.\n");
+      return -1;
+    }
+  } else {
+    if (update_order(database, &matched_order) != 0) {
+      fprintf(stderr, "Error: Failed to update matched order.\n");
+      return -1;
+    }
+  }
+
+  // Insert the remaining order if not fully matched
+  if (ord->quantity > 0) {
+    if (insert_order(database, ord) != 0) {
+      fprintf(stderr, "Error: Failed to insert remaining order.\n");
+      return -1;
+    }
+  }
+
+  return 0;
+}
 
 void myOrders(sqlite3* database, int userID, order** orderList,
               int* orderCount) {
