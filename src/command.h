@@ -159,10 +159,14 @@ void myOrders(sqlite3* database, int userID, order** orderList,
               int* orderCount);
 
 /**
- * @brief Views the details of an order by item ID.
+ * @brief Retrieves and displays all buy and sell orders for a specific item.
  *
- * @param itemID The ID of the item to view.
- * @return Pointer to the order struct containing the order details, or NULL if
- * not found.
+ * @param database Pointer to the SQLite database connection.
+ * @param itemID The ID of the item for which orders are to be retrieved.
+ * @param buy_orders Pointer to an array of buy order structs to be populated.
+ * @param buy_count Pointer to an integer to store the count of buy orders.
+ * @param sell_orders Pointer to an array of sell order structs to be populated.
+ * @param sell_count Pointer to an integer to store the count of sell orders.
  */
-order* view(int itemID);
+void viewItemOrders(sqlite3* database, int itemID, order** buy_orders,
+                    int* buy_count, order** sell_orders, int* sell_count);
