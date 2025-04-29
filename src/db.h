@@ -30,8 +30,14 @@ typedef enum {
  * @var user::userID
  * User's unique identifier.
  *
+ * @var user::username
+ * User's login username (must be unique).
+ *
+ * @var user::password
+ * User's login password (stored as plaintext for now).
+ *
  * @var user::name
- * User's name.
+ * User's display name.
  *
  * @var user::OMG
  * Amount of OMG coins owned by the user.
@@ -47,6 +53,8 @@ typedef enum {
  */
 typedef struct {
   int userID;
+  char* username;
+  char* password;
   char* name;
   int OMG;
   int DOGE;
