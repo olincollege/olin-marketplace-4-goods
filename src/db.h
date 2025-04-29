@@ -277,7 +277,7 @@ int find_matching_sell(sqlite3* database, order* search_order);
  * and must be freed by the caller.
  * @return SQLITE_OK if the order is successfully retrieved, SQLITE_NOTFOUND if
  * the order is not found, or an SQLite error code if an error occurs during the
- * operation.
+ * retrieving process.
  *
  * This function prepares and executes an SQL query to fetch the order details
  * from the `orders` table. If the order is found, its details are populated
@@ -287,21 +287,25 @@ int find_matching_sell(sqlite3* database, order* search_order);
 int get_order(sqlite3* database, int orderID, order* order_out);
 
 /**
- * @brief Updates an existing order in the database with new values.
- *
- * This function updates the details of an order in the `orders` table
- * based on the provided `orderID`. The updated values are taken from
- * the `updated_order` structure. The function prepares an SQL `UPDATE`
- * statement, binds the values from the `updated_order` structure to the
- * statement, executes it, and finalizes the statement.
+ * Retrieves all orders involving a specific item exchanged.
  *
  * @param database A pointer to the SQLite database connection.
- * @param updated_order A pointer to an `order` structure containing the
- * updated order details. The structure must include the `orderID` of the
- * order to be updated.
- *
- * @return Returns `SQLITE_OK` on success. On failure, it returns an SQLite
- * error code and logs the error message to `stderr`.
+ * @param item The CoinType (e.g., COIN_BTC, COIN_ETH).
+ * @param orders_out Pointer to array of orders but memory allocated must be
+ * freed by caller.
+ * @param count_out Pointer to an integer to receive the number of orders.
+ * @return SQLITE_OK on success, or an SQLite error code on failure.
  */
+int get_item_all_orders(sqlite3* database, int item, order** orders_out,
+                        int* count_out);
 
-int update_order(sqlite3* database, order* updated_order);
+/**
+ * Updates an existing order in the "orders" table.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param updated_order Pointer to the updated order struct (must have orderID
+ * filled).
+ * @return SQLITE_OK when it is a success, or an SQLite error code when it is a
+ * failure.
+ */
+int update_order(sqlite3* database, const order* updated_order);

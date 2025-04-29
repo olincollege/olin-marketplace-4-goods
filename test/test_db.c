@@ -258,6 +258,130 @@ Test(test_orders, test_delete_order) {
   close_database(database);
 }
 
+Test(test_orders, test_get_item_all_orders) {
+  // Open database
+  sqlite3* database = open_database();
+  cr_assert_not_null(database, "Database connection should not be NULL");
+
+  // Reset tables
+  drop_all_tables(database);
+  create_tables(database);
+
+  // Insert a user (required for foreign key constraint)
+  const char* insert_user_sql = "INSERT INTO users (name) VALUES ('Test User');";
+  char* errMsg = NULL;
+  int res = sqlite3_exec(database, insert_user_sql, NULL, NULL, &errMsg);
+  cr_assert_eq(res, SQLITE_OK, "Failed to insert user: %s", errMsg);
+  sqlite3_free(errMsg);
+
+  // Insert multiple orders
+  order order1 = {.item = COIN_BTC, .buyOrSell = BUY, .quantity = 5, .unitPrice = 100.0, .userID = 1};
+  order order2 = {.item = COIN_BTC, .buyOrSell = SELL, .quantity = 3, .unitPrice = 90.0, .userID = 1};
+  order order3 = {.item = COIN_ETH, .buyOrSell = BUY, .quantity = 2, .unitPrice = 200.0, .userID = 1};
+
+  res = insert_order(database, &order1);
+  cr_assert_eq(res, SQLITE_OK, "Failed to insert order1: %d", res);
+  res = insert_order(database, &order2);
+  cr_assert_eq(res, SQLITE_OK, "Failed to insert order2: %d", res);
+  res = insert_order(database, &order3);
+  cr_assert_eq(res, SQLITE_OK, "Failed to insert order3: %d", res);
+
+  // Test get_item_all_orders
+  order* order_list = NULL;
+  int order_count = 0;
+  res = get_item_all_orders(database, COIN_BTC, &order_list, &order_count);
+  cr_assert_eq(res, SQLITE_OK, "get_item_all_orders failed: %d", res);
+  cr_assert_eq(order_count, 2, "Expected 2 BTC orders, but got %d", order_count);
+  cr_assert_not_null(order_list, "Returned order list should not be NULL");
+
+  // Check the returned orders' item types
+  for (int i = 0; i < order_count; i++) {
+    cr_assert_eq(order_list[i].item, COIN_BTC, "Order item is not COIN_BTC");
+  }
+
+  // Cleanup
+  for (int i = 0; i < order_count; i++) {
+    free(order_list[i].created_at);
+  }
+  free(order_list);
+
+  close_database(database);
+}
+
+Test(test_orders, test_update_order) {
+  // Open database
+  sqlite3* database = open_database();
+  cr_assert_not_null(database, "Database connection should not be NULL");
+
+  // Reset tables
+  drop_all_tables(database);
+  create_tables(database);
+
+  // Insert a user to satisfy foreign key constraint
+  const char* insert_user_sql = "INSERT INTO users (name) VALUES ('Test User');";
+  char* errMsg = NULL;
+  int res = sqlite3_exec(database, insert_user_sql, NULL, NULL, &errMsg);
+  cr_assert_eq(res, SQLITE_OK, "Failed to insert user: %s", errMsg);
+  sqlite3_free(errMsg);
+
+  // Insert an order
+  order new_order = {
+      .item = COIN_BTC,
+      .buyOrSell = BUY,
+      .quantity = 10,
+      .unitPrice = 100.0,
+      .userID = 1,
+  };
+  res = insert_order(database, &new_order);
+  cr_assert_eq(res, SQLITE_OK, "insert_order failed: %d", res);
+
+  // Retrieve the inserted order's ID
+  const char* select_sql = "SELECT orderID FROM orders;";
+  sqlite3_stmt* stmt = NULL;
+  res = sqlite3_prepare_v2(database, select_sql, -1, &stmt, NULL);
+  cr_assert_eq(res, SQLITE_OK, "Failed to prepare select statement: %s", sqlite3_errmsg(database));
+
+  res = sqlite3_step(stmt);
+  cr_assert_eq(res, SQLITE_ROW, "No order inserted to fetch ID.");
+
+  int orderID = sqlite3_column_int(stmt, 0);
+  sqlite3_finalize(stmt);
+
+  // Update the order
+  order updated_order = {
+      .orderID = orderID,
+      .item = COIN_ETH,       // Change to ETH
+      .buyOrSell = SELL,      // Change to SELL
+      .quantity = 20,         // Update quantity
+      .unitPrice = 150.0,     // Update price
+      .userID = 1,            // Same user
+  };
+
+  res = update_order(database, &updated_order);
+  cr_assert_eq(res, SQLITE_OK, "update_order failed: %d", res);
+
+  // Verify the update
+  const char* verify_sql = 
+      "SELECT item, buyOrSell, quantity, unitPrice, userID FROM orders WHERE orderID = ?;";
+  res = sqlite3_prepare_v2(database, verify_sql, -1, &stmt, NULL);
+  cr_assert_eq(res, SQLITE_OK, "Failed to prepare verification select: %s", sqlite3_errmsg(database));
+
+  res = sqlite3_bind_int(stmt, 1, orderID);
+  cr_assert_eq(res, SQLITE_OK, "Failed to bind order ID: %s", sqlite3_errmsg(database));
+
+  res = sqlite3_step(stmt);
+  cr_assert_eq(res, SQLITE_ROW, "No order found with given ID after update.");
+
+  cr_assert_eq(sqlite3_column_int(stmt, 0), updated_order.item, "Updated item does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 1), updated_order.buyOrSell, "Updated buyOrSell does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 2), updated_order.quantity, "Updated quantity does not match.");
+  cr_assert_float_eq(sqlite3_column_double(stmt, 3), updated_order.unitPrice, 0.001, "Updated unitPrice does not match.");
+  cr_assert_eq(sqlite3_column_int(stmt, 4), updated_order.userID, "Updated userID does not match.");
+
+  sqlite3_finalize(stmt);
+  close_database(database);
+}
+
 Test(test_orders, test_find_matching_buy) {
   // Open database
   sqlite3* database = open_database();
@@ -362,3 +486,4 @@ Test(test_orders, test_find_matching_buy) {
   sqlite3_finalize(stmt);
   close_database(database);
 }
+
