@@ -255,7 +255,7 @@ int delete_order(sqlite3* database, int orderID) {
 
 int get_user(sqlite3* database, int userID, user* user_out) {
   const char* sql =
-      "SELECT userID, name, OMG, DOGE, BTC, ETH FROM users WHERE userID = ?;";
+      "SELECT userID, username, password, name, OMG, DOGE, BTC, ETH FROM users WHERE userID = ?;";
   sqlite3_stmt* stmt = NULL;
 
   int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
@@ -265,17 +265,32 @@ int get_user(sqlite3* database, int userID, user* user_out) {
     return res;
   }
 
-  sqlite3_bind_int(stmt, 1, userID);
+  res = sqlite3_bind_int(stmt, 1, userID);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to bind userID for get_user: %s\n",
+            sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return res;
+  }
 
   res = sqlite3_step(stmt);
   if (res == SQLITE_ROW) {
     user_out->userID = sqlite3_column_int(stmt, 0);
-    const unsigned char* name = sqlite3_column_text(stmt, 1);
+
+    const unsigned char* username = sqlite3_column_text(stmt, 1);
+    user_out->username = strdup((const char*)username);
+
+    const unsigned char* password = sqlite3_column_text(stmt, 2);
+    user_out->password = strdup((const char*)password);
+
+    const unsigned char* name = sqlite3_column_text(stmt, 3);
     user_out->name = strdup((const char*)name);
-    user_out->OMG = sqlite3_column_int(stmt, 2);
-    user_out->DOGE = sqlite3_column_int(stmt, 3);
-    user_out->BTC = sqlite3_column_int(stmt, 4);
-    user_out->ETH = sqlite3_column_int(stmt, 5);
+
+    user_out->OMG = sqlite3_column_int(stmt, 4);
+    user_out->DOGE = sqlite3_column_int(stmt, 5);
+    user_out->BTC = sqlite3_column_int(stmt, 6);
+    user_out->ETH = sqlite3_column_int(stmt, 7);
+
     sqlite3_finalize(stmt);
     return SQLITE_OK;
   }
