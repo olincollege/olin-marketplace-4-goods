@@ -525,17 +525,18 @@ fail:
   return res;
 }
 
-int update_user_balance ( sqlite3* database, const user* updated_user) {
-
-  const char* sql = "UPDATE users SET OMG = ?, DOGE = ?, BTC = ?, ETH = ? WHERE userID = ?;";
-  sqlite3_stmt* stmt = NULL; 
+int update_user_balance(sqlite3* database, const user* updated_user) {
+  const char* sql =
+      "UPDATE users SET OMG = ?, DOGE = ?, BTC = ?, ETH = ? WHERE userID = ?;";
+  sqlite3_stmt* stmt = NULL;
 
   int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
   if (res != SQLITE_OK) {
-    fprintf(stderr, " Unable to prepare the update_user_balance statement: %s/n",
-      sqlite3_errmsg(database));
+    fprintf(stderr,
+            " Unable to prepare the update_user_balance statement: %s/n",
+            sqlite3_errmsg(database));
     return res;
-  } 
+  }
 
   res = sqlite3_bind_int(stmt, 1, updated_user->OMG);
   if (res != SQLITE_OK) goto fail;
@@ -560,7 +561,8 @@ int update_user_balance ( sqlite3* database, const user* updated_user) {
   return SQLITE_OK;
 
 fail:
-  fprintf(stderr, "Failed to bind value for update_user_balance: %s\n", sqlite3_errmsg(database));
+  fprintf(stderr, "Failed to bind value for update_user_balance: %s\n",
+          sqlite3_errmsg(database));
   sqlite3_finalize(stmt);
   return res;
 }
@@ -602,4 +604,33 @@ int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
   *count_out = count;
 
   return SQLITE_OK;
+}
+
+int get_user_inventories(sqlite3* database, user* user_out) {
+  const char* sql = "SELECT OMG, DOGE, BTC, ETH FROM users WHERE userID = ?;";
+  sqlite3_stmt* stmt = NULL;
+
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr,
+            "Failed to prepare the get_user_inventories statement: %s\n",
+            sqlite3_errmsg(database));
+    return res;
+  }
+
+  sqlite3_bind_int(stmt, 1, user_out->userID);
+
+  res = sqlite3_step(stmt);
+  if (res == SQLITE_ROW) {
+    user_out->OMG = sqlite3_column_int(stmt, 0);
+    user_out->DOGE = sqlite3_column_int(stmt, 1);
+    user_out->BTC = sqlite3_column_int(stmt, 2);
+    user_out->ETH = sqlite3_column_int(stmt, 3);
+    sqlite3_finalize(stmt);
+    return SQLITE_OK;
+  }
+
+  fprintf(stderr, "User with ID %d not found.\n", user_out->userID);
+  sqlite3_finalize(stmt);
+  return SQLITE_NOTFOUND;
 }

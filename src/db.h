@@ -328,7 +328,8 @@ int update_order(sqlite3* database, const order* updated_order);
  * Updates the coin balances of a user that is already a part of the database.
  *
  * @param database A pointer to the SQLite database connection.
- * @param updated_user Pointer to the user struct with updated balances (userID should be given).
+ * @param updated_user Pointer to the user struct with updated balances (userID
+ * should be given).
  * @return SQLITE_OK on success, or an SQLite error code on failure.
  */
 int update_user_balance(sqlite3* database, const user* updated_user);
@@ -350,3 +351,29 @@ int update_user_balance(sqlite3* database, const user* updated_user);
 
 int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
                         int* count_out);
+
+/**
+ * @brief Retrieves the cryptocurrency inventory for a specific user from the
+ * database.
+ *
+ * This function queries the database to fetch the inventory of cryptocurrencies
+ * (OMG, DOGE, BTC, ETH) for a user identified by their userID. The results are
+ * stored in the provided `user` structure.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param user_out A pointer to a `user` structure where the retrieved inventory
+ *                 will be stored. The `userID` field of this structure must be
+ *                 set prior to calling this function.
+ *
+ * @return SQLITE_OK if the user's inventory is successfully retrieved.
+ *         SQLITE_NOTFOUND if the user with the specified userID is not found.
+ *         An SQLite error code if there is an issue with preparing or executing
+ *         the SQL statement.
+ *
+ * @note The function assumes that the `user` structure has fields named OMG,
+ *       DOGE, BTC, and ETH to store the respective cryptocurrency values.
+ * @note The caller is responsible for ensuring that the database connection is
+ *       valid and that the `user_out` pointer is not NULL.
+ */
+
+int get_user_inventories(sqlite3* database, user* user_out);
