@@ -33,33 +33,35 @@ int close_database(sqlite3* database) {
 // Creates the required tables for the database
 int create_tables(sqlite3* database) {
   const char* create_tables_sql =
-      "CREATE TABLE IF NOT EXISTS users ("
-      "userID INTEGER PRIMARY KEY AUTOINCREMENT, "
-      "name TEXT NOT NULL, "
-      "OMG INTEGER DEFAULT 0, "
-      "DOGE INTEGER DEFAULT 0, "
-      "BTC INTEGER DEFAULT 0, "
-      "ETH INTEGER DEFAULT 0);"
+    "CREATE TABLE IF NOT EXISTS users ("
+    "userID INTEGER PRIMARY KEY AUTOINCREMENT, "
+    "username TEXT UNIQUE NOT NULL, "
+    "password TEXT NOT NULL, "
+    "name TEXT NOT NULL, "
+    "OMG INTEGER DEFAULT 0, "
+    "DOGE INTEGER DEFAULT 0, "
+    "BTC INTEGER DEFAULT 0, "
+    "ETH INTEGER DEFAULT 0);"
 
-      "CREATE TABLE IF NOT EXISTS orders ("
-      "orderID INTEGER PRIMARY KEY AUTOINCREMENT, "
-      "item INTEGER NOT NULL, "
-      "buyOrSell INTEGER NOT NULL, "
-      "quantity INTEGER NOT NULL, "
-      "unitPrice REAL NOT NULL, "
-      "userID INTEGER NOT NULL, "
-      "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
-      "FOREIGN KEY(userID) REFERENCES users(userID));"
+    "CREATE TABLE IF NOT EXISTS orders ("
+    "orderID INTEGER PRIMARY KEY AUTOINCREMENT, "
+    "item INTEGER NOT NULL, "
+    "buyOrSell INTEGER NOT NULL, "
+    "quantity INTEGER NOT NULL, "
+    "unitPrice REAL NOT NULL, "
+    "userID INTEGER NOT NULL, "
+    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+    "FOREIGN KEY(userID) REFERENCES users(userID));"
 
-      "CREATE TABLE IF NOT EXISTS archives ("
-      "orderID INTEGER PRIMARY KEY AUTOINCREMENT, "
-      "item INTEGER NOT NULL, "
-      "buyOrSell INTEGER NOT NULL, "
-      "quantity INTEGER NOT NULL, "
-      "unitPrice REAL NOT NULL, "
-      "userID INTEGER NOT NULL, "
-      "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
-      "FOREIGN KEY(userID) REFERENCES users(userID));";
+    "CREATE TABLE IF NOT EXISTS archives ("
+    "orderID INTEGER PRIMARY KEY AUTOINCREMENT, "
+    "item INTEGER NOT NULL, "
+    "buyOrSell INTEGER NOT NULL, "
+    "quantity INTEGER NOT NULL, "
+    "unitPrice REAL NOT NULL, "
+    "userID INTEGER NOT NULL, "
+    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+    "FOREIGN KEY(userID) REFERENCES users(userID));";
 
   char* errMsg = 0;
   int res = sqlite3_exec(database, create_tables_sql, 0, 0, &errMsg);
@@ -130,26 +132,35 @@ int insert_order(sqlite3* database, order* new_order) {
 
 int insert_user(sqlite3* database, user* new_user) {
   const char* sql =
-      "INSERT INTO users (name, OMG, DOGE, BTC, ETH) "
-      "VALUES (?, ?, ?, ?, ?);";
+      "INSERT INTO users (username, password, name, OMG, DOGE, BTC, ETH) "
+      "VALUES (?, ?, ?, ?, ?, ?, ?);";
 
   sqlite3_stmt* stmt = NULL;
   int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
   if (res != SQLITE_OK) {
-    fprintf(stderr, "Failed to prepare statement: %s\n",
+    fprintf(stderr, "Failed to prepare insert_user statement: %s\n",
             sqlite3_errmsg(database));
     return res;
   }
 
-  sqlite3_bind_text(stmt, 1, new_user->name, -1, SQLITE_STATIC);
-  sqlite3_bind_int(stmt, 2, new_user->OMG);
-  sqlite3_bind_int(stmt, 3, new_user->DOGE);
-  sqlite3_bind_int(stmt, 4, new_user->BTC);
-  sqlite3_bind_int(stmt, 5, new_user->ETH);
+  res = sqlite3_bind_text(stmt, 1, new_user->username, -1, SQLITE_STATIC);
+  if (res != SQLITE_OK) goto fail;
+  res = sqlite3_bind_text(stmt, 2, new_user->password, -1, SQLITE_STATIC);
+  if (res != SQLITE_OK) goto fail;
+  res = sqlite3_bind_text(stmt, 3, new_user->name, -1, SQLITE_STATIC);
+  if (res != SQLITE_OK) goto fail;
+  res = sqlite3_bind_int(stmt, 4, new_user->OMG);
+  if (res != SQLITE_OK) goto fail;
+  res = sqlite3_bind_int(stmt, 5, new_user->DOGE);
+  if (res != SQLITE_OK) goto fail;
+  res = sqlite3_bind_int(stmt, 6, new_user->BTC);
+  if (res != SQLITE_OK) goto fail;
+  res = sqlite3_bind_int(stmt, 7, new_user->ETH);
+  if (res != SQLITE_OK) goto fail;
 
   res = sqlite3_step(stmt);
   if (res != SQLITE_DONE) {
-    fprintf(stderr, "Failed to execute statement: %s\n",
+    fprintf(stderr, "Failed to execute insert_user statement: %s\n",
             sqlite3_errmsg(database));
     sqlite3_finalize(stmt);
     return res;
@@ -157,6 +168,11 @@ int insert_user(sqlite3* database, user* new_user) {
 
   sqlite3_finalize(stmt);
   return SQLITE_OK;
+
+fail:
+  fprintf(stderr, "Failed to bind value for insert_user: %s\n", sqlite3_errmsg(database));
+  sqlite3_finalize(stmt);
+  return res;
 }
 
 void dump_database(sqlite3* database) {
@@ -239,7 +255,7 @@ int delete_order(sqlite3* database, int orderID) {
 
 int get_user(sqlite3* database, int userID, user* user_out) {
   const char* sql =
-      "SELECT userID, name, OMG, DOGE, BTC, ETH FROM users WHERE userID = ?;";
+      "SELECT userID, username, password, name, OMG, DOGE, BTC, ETH FROM users WHERE userID = ?;";
   sqlite3_stmt* stmt = NULL;
 
   int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
@@ -249,17 +265,32 @@ int get_user(sqlite3* database, int userID, user* user_out) {
     return res;
   }
 
-  sqlite3_bind_int(stmt, 1, userID);
+  res = sqlite3_bind_int(stmt, 1, userID);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to bind userID for get_user: %s\n",
+            sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return res;
+  }
 
   res = sqlite3_step(stmt);
   if (res == SQLITE_ROW) {
     user_out->userID = sqlite3_column_int(stmt, 0);
-    const unsigned char* name = sqlite3_column_text(stmt, 1);
+
+    const unsigned char* username = sqlite3_column_text(stmt, 1);
+    user_out->username = strdup((const char*)username);
+
+    const unsigned char* password = sqlite3_column_text(stmt, 2);
+    user_out->password = strdup((const char*)password);
+
+    const unsigned char* name = sqlite3_column_text(stmt, 3);
     user_out->name = strdup((const char*)name);
-    user_out->OMG = sqlite3_column_int(stmt, 2);
-    user_out->DOGE = sqlite3_column_int(stmt, 3);
-    user_out->BTC = sqlite3_column_int(stmt, 4);
-    user_out->ETH = sqlite3_column_int(stmt, 5);
+
+    user_out->OMG = sqlite3_column_int(stmt, 4);
+    user_out->DOGE = sqlite3_column_int(stmt, 5);
+    user_out->BTC = sqlite3_column_int(stmt, 6);
+    user_out->ETH = sqlite3_column_int(stmt, 7);
+
     sqlite3_finalize(stmt);
     return SQLITE_OK;
   }
