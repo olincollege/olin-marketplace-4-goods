@@ -273,3 +273,7 @@ void viewItemOrders(sqlite3* database, int itemID, order** buy_orders,
     return;
   }
 }
+
+int get_user_inventory(sqlite3* database, user* usr) {
+  return get_user_inventories(database, usr);
+}
