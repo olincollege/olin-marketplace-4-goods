@@ -23,6 +23,13 @@ typedef enum {
   COIN_ETH = 3
 } CoinType;
 
+typedef enum {
+  DEFAULT_OMG = 100,
+  DEFAULT_DOGE = 200,
+  DEFAULT_BTC = 50,
+  DEFAULT_ETH = 75
+} CoinAmount;
+
 /**
  * @struct user
  * @brief Represents a user and their cryptocurrency inventory.
@@ -188,6 +195,8 @@ int insert_order(sqlite3* database, order* new_order);
  * @param database A pointer to the SQLite database connection.
  * @param new_user A pointer to a user structure containing the data to be
  * inserted.
+ * @param user_ID A pointer to an integer where the newly inserted user's ID
+ * will be stored. This value is set to the row ID of the inserted record.
  * @return SQLITE_OK on success, or an SQLite error code on failure.
  *
  * This function prepares an SQL INSERT statement, binds the user data to the
@@ -195,8 +204,7 @@ int insert_order(sqlite3* database, order* new_order);
  * error message is printed to stderr and the corresponding SQLite error code
  * is returned.
  */
-
-int insert_user(sqlite3* database, user* new_user);
+int insert_user(sqlite3* database, user* new_user, int* user_ID);
 
 /**
  * @brief Prints the contents of specific tables from a SQLite database.
@@ -377,3 +385,30 @@ int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
  */
 
 int get_user_inventories(sqlite3* database, user* user_out);
+
+/**
+ * Retrieves a user record from the database by username.
+ *
+ * This function queries the `users` table in the provided SQLite database
+ * to find a user with the specified username. If a matching user is found,
+ * their details are populated into the provided `user_out` structure.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param username The username of the user to retrieve.
+ * @param user_out A pointer to a `user` structure where the retrieved user
+ *                 information will be stored. The caller is responsible for
+ *                 freeing any dynamically allocated strings in this structure.
+ *
+ * @return `SQLITE_OK` if the user is successfully retrieved and `user_out` is
+ * populated. `SQLITE_NOTFOUND` if no user with the specified username is found.
+ *         An SQLite error code if an error occurs during the query execution.
+ *
+ * @note The function dynamically allocates memory for the `username`,
+ * `password`, and `name` fields in the `user_out` structure. The caller must
+ * free these fields to avoid memory leaks.
+ *
+ * @note The function logs errors to `stderr` if any SQLite operation fails.
+ */
+
+int get_user_by_username(sqlite3* database, const char* username,
+                         user* user_out);

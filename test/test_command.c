@@ -26,8 +26,8 @@ Test(test_command_db, test_buy) {
       .BTC = 50,
       .ETH = 75,
   };
-
-  res = insert_user(database, &new_user);
+  int user_id = 0;
+  res = insert_user(database, &new_user, &user_id);
   cr_assert_eq(res, 0, "Expected insert_user to return 0, but got %d", res);
 
   order* test_order = create_order(1, 1, 10, 5.0, new_user.userID);
@@ -63,7 +63,8 @@ Test(test_command_db, test_sell) {
       .ETH = 75,
   };
 
-  res = insert_user(database, &new_user);
+  int user_id = 0;
+  res = insert_user(database, &new_user, &user_id);
   cr_assert_eq(res, 0, "Expected insert_user to return 0, but got %d", res);
 
   order* test_order = create_order(1, 1, 10, 5.0, new_user.userID);
@@ -108,10 +109,11 @@ Test(test_command_db, test_sell_with_two_users) {
       .ETH = 50,
   };
 
-  res = insert_user(database, &user1);
+  int user_id = 0;
+  res = insert_user(database, &user1, &user_id);
   cr_assert_eq(res, 0, "Expected insert_user to return 0, but got %d", res);
 
-  res = insert_user(database, &user2);
+  res = insert_user(database, &user2, &user_id);
   cr_assert_eq(res, 0, "Expected insert_user to return 0, but got %d", res);
 
   // User1 publishes two buy orders

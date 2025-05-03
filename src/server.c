@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include "command.h"
+#include "db.h"
 #include "util.h"
 
 echo_server* make_echo_server(struct sockaddr_in ip_addr, int max_backlog) {
@@ -56,19 +57,199 @@ int accept_client(echo_server* server, int userID, sqlite3* database) {
     error_and_exit("Can't open secondary socket");
   }
   if (!fork()) {
-    authenticate();
-    echo(connect_d, userID, database);
+    FILE* comm_file = fdopen(connect_d, "r+");
+    int userID = -1;
+    int status = 0;
+    if (comm_file == NULL) {
+      error_and_exit("Can't open file");
+    }
+
+    // Either register or log in
+    while (userID == -1 || userID == 0 || status != 1) {
+      if (fputs(
+              "Welcome to OMG. \"r\" to register, and \"u\" for existing users "
+              "\r\n",
+              comm_file) == EOF) {
+        error_and_exit("Couldn't send prompt");
+      }
+      char* input = NULL;
+      size_t input_size = 0;
+      if (getline(&input, &input_size, comm_file) == -1) {
+        error_and_exit("Couldn't read input");
+      }
+      // Check the first character of the input
+      if (input[0] == 'r') {
+        // Handle 'r' case
+        userID = register_user(comm_file, database);
+      } else if (input[0] == 'u') {
+        // Handle 'u' case
+        userID = authenticate(comm_file, database);
+        status = 1;
+      } else {
+        // Handle invalid input
+        if (fputs("Invalid option. Please enter 'r' or 'u'.\r\n", comm_file) ==
+            EOF) {
+          error_and_exit("Couldn't send error message");
+        }
+        (void)fflush(comm_file);
+      }
+      free(input);
+    }
+    echo(comm_file, userID, database);
     return -1;
   }
   return 0;
 }
 
-void echo(int socket_descriptor, int userID, sqlite3* database) {
-  FILE* comm_file = fdopen(socket_descriptor, "r+");
-  if (comm_file == NULL) {
-    error_and_exit("Can't open file");
+int register_user(FILE* comm_file, sqlite3* database) {
+  int userID = 0;
+  if (fputs("Please enter a username: \r\n", comm_file) == EOF) {
+    error_and_exit("Couldn't send prompt");
   }
 
+  char* username = NULL;
+  size_t username_size = 0;
+  if (getline(&username, &username_size, comm_file) == -1) {
+    error_and_exit("Couldn't read username");
+  }
+
+  // Remove trailing newline character if present
+  size_t len = strlen(username);
+  if (len > 0 && username[len - 1] == '\n') {
+    username[len - 2] = '\0';
+  }
+
+  if (fputs("Please enter your name (for display purposes): \r\n", comm_file) ==
+      EOF) {
+    error_and_exit("Couldn't send prompt");
+  }
+
+  char* name = NULL;
+  size_t name_size = 0;
+  if (getline(&name, &name_size, comm_file) == -1) {
+    error_and_exit("Couldn't read name");
+  }
+
+  // Remove trailing newline character if present
+  len = strlen(name);
+  if (len > 0 && name[len - 1] == '\n') {
+    name[len - 2] = '\0';
+  }
+
+  if (fputs("Please enter a password: \r\n", comm_file) == EOF) {
+    error_and_exit("Couldn't send prompt");
+  }
+
+  char* password = NULL;
+  size_t password_size = 0;
+  if (getline(&password, &password_size, comm_file) == -1) {
+    error_and_exit("Couldn't read password");
+  }
+
+  // Remove trailing newline character if present
+  len = strlen(password);
+  if (len > 0 && password[len - 1] == '\n') {
+    password[len - 2] = '\0';
+  }
+
+  // Register the user in the database
+  user new_user = {.username = username,
+                   .password = password,
+                   .name = name,
+                   .BTC = DEFAULT_BTC,
+                   .DOGE = DEFAULT_DOGE,
+                   .ETH = DEFAULT_ETH,
+                   .OMG = DEFAULT_OMG};
+
+  if (insert_user(database, &new_user, &userID) != SQLITE_OK) {
+    puts("Error inserting user!");
+    return -1;
+  }
+
+  if (fputs("Registration successful! You can now log in.\r\n", comm_file) ==
+      EOF) {
+    error_and_exit("Couldn't send success message");
+  }
+
+  free(username);
+  free(name);
+  free(password);
+  return userID;
+}
+
+int authenticate(FILE* comm_file, sqlite3* database) {
+  int authenticated = 0;
+  while (authenticated != 1) {
+    dump_database(database);
+
+    // Write "username: " to the socket
+    if (fputs("Username: \r\n", comm_file) == EOF) {
+      error_and_exit("Couldn't send prompt");
+    }
+
+    // Read the input into a char*
+    char* username = NULL;
+    size_t username_size = 0;
+    if (getline(&username, &username_size, comm_file) == -1) {
+      error_and_exit("Couldn't read username");
+    }
+
+    // Remove trailing newline character if present
+    size_t len = strlen(username);
+    if (len > 0 && username[len - 1] == '\n') {
+      username[len - 2] = '\0';
+    }
+
+    user auth_user;
+    if (get_user_with_username(database, username, &auth_user) != SQLITE_OK) {
+      puts("Name is wrong");
+      if (fputs("Failed to authenticate username!\r\n\n", comm_file) == EOF) {
+        error_and_exit("Couldn't send error message");
+      }
+      (void)fflush(comm_file);
+      free(username);
+      continue;
+    }
+
+    // Write "Password: " to the socket
+    if (fputs("Password: \r\n", comm_file) == EOF) {
+      error_and_exit("Couldn't send prompt");
+    }
+
+    // Read the input into a char*
+    char* password = NULL;
+    size_t password_size = 0;
+    if (getline(&password, &password_size, comm_file) == -1) {
+      error_and_exit("Couldn't read password");
+    }
+
+    // Remove trailing newline character if present
+    len = strlen(password);
+    if (len > 0 && password[len - 1] == '\n') {
+      password[len - 2] = '\0';
+    }
+
+    if (strcmp(password, auth_user.password) == 0) {
+      (void)fprintf(comm_file, "Welcome back, %s\r\n", auth_user.name);
+      (void)fflush(comm_file);
+      authenticated = 1;
+      free(username);
+      free(password);
+      return auth_user.userID;
+    }
+
+    if (fputs("Password incorrect\r\n\n", comm_file) == EOF) {
+      error_and_exit("Couldn't send error message");
+    }
+    (void)fflush(comm_file);
+
+    // Free allocated memory for username and password
+    free(username);
+    free(password);
+  }
+}
+
+void echo(FILE* comm_file, int userID, sqlite3* database) {
   // Send welcome message
   if (fputs(" $$$$$$\\  $$\\      $$\\  $$$$$$\\ \r\n"
             "$$  __$$\\ $$$\\    $$$ |$$  __$$\\\r\n"

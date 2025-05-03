@@ -104,7 +104,8 @@ int free_order(order* ord);
  * @param ETH The amount of ETH the user has.
  * @return A pointer to the created user struct, or NULL if allocation fails.
  */
-user* create_user(int userID, const char* name, int OMG, int DOGE, int BTC,
+user* create_user(int userID, const char* name, const char* username,
+                  const char* password, int OMG, int DOGE, int BTC,
                   int ETH);  // Defined below
 
 /**
@@ -185,3 +186,21 @@ void viewItemOrders(sqlite3* database, int itemID, order** buy_orders,
  *         `get_user_inventories`.
  */
 int get_user_inventory(sqlite3* database, user* usr);
+
+/**
+ * Retrieves a user from the database based on the provided username.
+ *
+ * This function acts as a wrapper around `get_user_by_username` to fetch
+ * user details from the database. The user information is stored in the
+ * provided `user` structure.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param username A constant character pointer representing the username
+ *                 to search for in the database.
+ * @param usr      A pointer to a `user` structure where the retrieved
+ *                 user information will be stored.
+ * @return         An integer indicating the success or failure of the
+ *                 operation. The return value is determined by the
+ *                 underlying `get_user_by_username` function.
+ */
+int get_user_with_username(sqlite3* database, const char* username, user* usr);

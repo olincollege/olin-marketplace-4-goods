@@ -112,14 +112,16 @@ int free_order(order* ord) {
   return 0;  // Return 0 on successful free
 }
 
-user* create_user(int userID, const char* name, int OMG, int DOGE, int BTC,
-                  int ETH) {
+user* create_user(int userID, const char* username, const char* password,
+                  const char* name, int OMG, int DOGE, int BTC, int ETH) {
   user* new_user = (user*)malloc(sizeof(user));
   if (new_user == NULL) {
     return NULL;  // Return NULL if memory allocation fails
   }
 
   new_user->userID = userID;
+  new_user->username = username;
+  new_user->password = password;
   new_user->OMG = OMG;
   new_user->DOGE = DOGE;
   new_user->BTC = BTC;
@@ -276,4 +278,8 @@ void viewItemOrders(sqlite3* database, int itemID, order** buy_orders,
 
 int get_user_inventory(sqlite3* database, user* usr) {
   return get_user_inventories(database, usr);
+}
+
+int get_user_with_username(sqlite3* database, const char* username, user* usr) {
+  return get_user_by_username(database, username, usr);
 }

@@ -158,7 +158,8 @@ Test(test_users, test_insert_user) {
   };
 
   // Call the function being tested
-  int res = insert_user(database, &new_user);
+  int user_id = 0;
+  int res = insert_user(database, &new_user, &user_id);
   cr_assert_eq(res, SQLITE_OK, "insert_user failed: %d", res);
 
   // Verify the user was inserted
@@ -502,10 +503,11 @@ Test(test_orders, test_find_matching_buy) {
   };
 
   // Insert users
-  int res = insert_user(database, &user1);
+  int user_id = 0;
+  int res = insert_user(database, &user1, &user_id);
   cr_assert_eq(res, SQLITE_OK, "insert_user for user1 failed: %d", res);
 
-  res = insert_user(database, &user2);
+  res = insert_user(database, &user2, &user_id);
   cr_assert_eq(res, SQLITE_OK, "insert_user for user2 failed: %d", res);
 
   // Create a mock buy order
@@ -596,7 +598,8 @@ Test(test_orders, test_get_user_all_orders) {
       .ETH = 75,
   };
 
-  int res = insert_user(database, &new_user);
+  int user_id = 0;
+  int res = insert_user(database, &new_user, &user_id);
   cr_assert_eq(res, SQLITE_OK, "insert_user failed: %d", res);
 
   // Insert multiple orders for the user
