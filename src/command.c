@@ -133,6 +133,7 @@ int free_user(user* usr) {
   free(usr);  // Free the user struct
   return 0;   // Return 0 on successful free
 }
+
 int buy(sqlite3* database, order* ord) {
   user current_user;
   if (get_user(database, ord->userID, &current_user) != 0) {
@@ -153,6 +154,11 @@ int buy(sqlite3* database, order* ord) {
   order matched_order;
   if (get_order(database, result, &matched_order) != 0) {
     fprintf(stderr, "Error: Failed to retrieve matching order.\n");
+    return -1;
+  }
+
+  if (assign_order_timestamp(database, ord) != 0) {
+    fprintf(stderr, "Error: Failed to assign timestamp to the order.\n");
     return -1;
   }
 
@@ -268,6 +274,11 @@ int sell(sqlite3* database, order* ord) {
   order matched_order;
   if (get_order(database, result, &matched_order) != 0) {
     fprintf(stderr, "Error: Failed to retrieve matching order.\n");
+    return -1;
+  }
+
+  if (assign_order_timestamp(database, ord) != 0) {
+    fprintf(stderr, "Error: Failed to assign timestamp to the order.\n");
     return -1;
   }
 

@@ -407,3 +407,18 @@ int insert_archive(sqlite3* database, const order* archived_order);
  */
 int get_user_archived_orders(sqlite3* database, int userID, order** orders_out,
                              int* count_out);
+
+/**
+ * Assigns a timestamp to the specified order and updates it in the database.
+ *
+ * This function retrieves the current timestamp, assigns it to the provided
+ * order, and updates the corresponding record in the SQLite database.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param order_to_update A pointer to the order structure that needs to be
+ * updated with the current timestamp.
+ * @return An integer indicating the success or failure of the operation:
+ *         - 0 on success.
+ *         - A non-zero error code on failure.
+ */
+int assign_order_timestamp(sqlite3* database, order* order_to_update);

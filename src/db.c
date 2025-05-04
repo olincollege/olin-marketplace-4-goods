@@ -711,3 +711,29 @@ int get_user_archived_orders(sqlite3* database, int userID, order** orders_out,
 
   return SQLITE_OK;
 }
+
+int assign_order_timestamp(sqlite3* database, order* order_to_update) {
+  const char* sql = "SELECT CURRENT_TIMESTAMP;";
+  sqlite3_stmt* stmt = NULL;
+
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to prepare the select statement: %s\n",
+            sqlite3_errmsg(database));
+    return res;
+  }
+
+  res = sqlite3_step(stmt);
+  if (res == SQLITE_ROW) {
+    const unsigned char* current_timestamp = sqlite3_column_text(stmt, 0);
+    order_to_update->created_at = strdup((const char*)current_timestamp);
+  } else {
+    fprintf(stderr, "Failed to retrieve the current timestamp: %s\n",
+            sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return res;
+  }
+
+  sqlite3_finalize(stmt);
+  return SQLITE_OK;
+}
