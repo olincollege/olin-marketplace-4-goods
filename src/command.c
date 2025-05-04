@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <string.h>  // Include for strlen and strcpy
 
-#include "util.h"
-
 int open_db(sqlite3** database) {
   *database = open_database();
   if (*database == NULL) {
@@ -162,6 +160,18 @@ int free_user(user* user_ptr) {
 }
 
 int buy(sqlite3* database, order* ord) {
+  user current_user;
+  if (get_user(database, ord->userID, &current_user) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve user information.\n");
+    return -1;
+  }
+
+  double total_cost = ord->quantity * ord->unitPrice;
+  if (current_user.OMG < total_cost) {
+    fprintf(stderr, "Error: Insufficient funds to place the buy order.\n");
+    return -1;
+  }
+
   int result = find_matching_sell(database, ord);
   if (result == -1) {
     return insert_order(database, ord);
@@ -172,13 +182,69 @@ int buy(sqlite3* database, order* ord) {
     return -1;
   }
 
+  if (assign_order_timestamp(database, ord) != 0) {
+    fprintf(stderr, "Error: Failed to assign timestamp to the order.\n");
+    return -1;
+  }
+
+  // Archive the matched order
+  if (archive_order(database, &matched_order) != 0) {
+    fprintf(stderr, "Error: Failed to archive matched order.\n");
+    return -1;
+  }
+
+  // Archive the buy order
+  if (archive_order(database, ord) != 0) {
+    fprintf(stderr, "Error: Failed to archive buy order.\n");
+    return -1;
+  }
+
   // Update quantities
-  if (ord->quantity > matched_order.quantity) {
-    ord->quantity -= matched_order.quantity;
-    matched_order.quantity = 0;
-  } else {
-    matched_order.quantity -= ord->quantity;
-    ord->quantity = 0;
+  int transaction_quantity = (ord->quantity > matched_order.quantity)
+                                 ? matched_order.quantity
+                                 : ord->quantity;
+  double transaction_cost = transaction_quantity * matched_order.unitPrice;
+
+  ord->quantity -= transaction_quantity;
+  matched_order.quantity -= transaction_quantity;
+
+  // Update user balances
+  current_user.OMG -= transaction_cost;
+  if (ord->item == COIN_OMG) {
+    current_user.OMG += transaction_quantity;
+  } else if (ord->item == COIN_DOGE) {
+    current_user.DOGE += transaction_quantity;
+  } else if (ord->item == COIN_BTC) {
+    current_user.BTC += transaction_quantity;
+  } else if (ord->item == COIN_ETH) {
+    current_user.ETH += transaction_quantity;
+  }
+
+  if (update_user_balance(database, &current_user) != 0) {
+    fprintf(stderr, "Error: Failed to update buyer's balance.\n");
+    return -1;
+  }
+
+  user seller_user;
+  if (get_user(database, matched_order.userID, &seller_user) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve seller information.\n");
+    return -1;
+  }
+
+  seller_user.OMG += transaction_cost;
+  if (matched_order.item == COIN_OMG) {
+    seller_user.OMG -= transaction_quantity;
+  } else if (matched_order.item == COIN_DOGE) {
+    seller_user.DOGE -= transaction_quantity;
+  } else if (matched_order.item == COIN_BTC) {
+    seller_user.BTC -= transaction_quantity;
+  } else if (matched_order.item == COIN_ETH) {
+    seller_user.ETH -= transaction_quantity;
+  }
+
+  if (update_user_balance(database, &seller_user) != 0) {
+    fprintf(stderr, "Error: Failed to update seller's balance.\n");
+    return -1;
   }
 
   // Delete or update the matched order
@@ -206,6 +272,26 @@ int buy(sqlite3* database, order* ord) {
 }
 
 int sell(sqlite3* database, order* ord) {
+  user current_user;
+  if (get_user(database, ord->userID, &current_user) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve user information.\n");
+    return -1;
+  }
+
+  if (ord->item == COIN_OMG && current_user.OMG < ord->quantity) {
+    fprintf(stderr, "Error: Insufficient OMG to place the sell order.\n");
+    return -1;
+  } else if (ord->item == COIN_DOGE && current_user.DOGE < ord->quantity) {
+    fprintf(stderr, "Error: Insufficient DOGE to place the sell order.\n");
+    return -1;
+  } else if (ord->item == COIN_BTC && current_user.BTC < ord->quantity) {
+    fprintf(stderr, "Error: Insufficient BTC to place the sell order.\n");
+    return -1;
+  } else if (ord->item == COIN_ETH && current_user.ETH < ord->quantity) {
+    fprintf(stderr, "Error: Insufficient ETH to place the sell order.\n");
+    return -1;
+  }
+
   int result = find_matching_buy(database, ord);
   if (result == -1) {
     return insert_order(database, ord);
@@ -216,13 +302,70 @@ int sell(sqlite3* database, order* ord) {
     return -1;
   }
 
+  if (assign_order_timestamp(database, ord) != 0) {
+    fprintf(stderr, "Error: Failed to assign timestamp to the order.\n");
+    return -1;
+  }
+
+  // Archive the matched order
+  if (archive_order(database, &matched_order) != 0) {
+    fprintf(stderr, "Error: Failed to archive matched order.\n");
+    return -1;
+  }
+
+  // Archive the sell order
+  if (archive_order(database, ord) != 0) {
+    fprintf(stderr, "Error: Failed to archive sell order.\n");
+    return -1;
+  }
+
   // Update quantities
-  if (ord->quantity > matched_order.quantity) {
-    ord->quantity -= matched_order.quantity;
-    matched_order.quantity = 0;
-  } else {
-    matched_order.quantity -= ord->quantity;
-    ord->quantity = 0;
+  int transaction_quantity = (ord->quantity > matched_order.quantity)
+                                 ? matched_order.quantity
+                                 : ord->quantity;
+  double transaction_cost = transaction_quantity * matched_order.unitPrice;
+
+  ord->quantity -= transaction_quantity;
+  matched_order.quantity -= transaction_quantity;
+
+  // Update user balances
+  if (ord->item == COIN_OMG) {
+    current_user.OMG -= transaction_quantity;
+  } else if (ord->item == COIN_DOGE) {
+    current_user.DOGE -= transaction_quantity;
+  } else if (ord->item == COIN_BTC) {
+    current_user.BTC -= transaction_quantity;
+  } else if (ord->item == COIN_ETH) {
+    current_user.ETH -= transaction_quantity;
+  }
+
+  current_user.OMG += transaction_cost;
+
+  if (update_user_balance(database, &current_user) != 0) {
+    fprintf(stderr, "Error: Failed to update seller's balance.\n");
+    return -1;
+  }
+
+  user buyer_user;
+  if (get_user(database, matched_order.userID, &buyer_user) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve buyer information.\n");
+    return -1;
+  }
+
+  buyer_user.OMG -= transaction_cost;
+  if (matched_order.item == COIN_OMG) {
+    buyer_user.OMG += transaction_quantity;
+  } else if (matched_order.item == COIN_DOGE) {
+    buyer_user.DOGE += transaction_quantity;
+  } else if (matched_order.item == COIN_BTC) {
+    buyer_user.BTC += transaction_quantity;
+  } else if (matched_order.item == COIN_ETH) {
+    buyer_user.ETH += transaction_quantity;
+  }
+
+  if (update_user_balance(database, &buyer_user) != 0) {
+    fprintf(stderr, "Error: Failed to update buyer's balance.\n");
+    return -1;
   }
 
   // Delete or update the matched order
@@ -294,4 +437,22 @@ int get_user_inventory(sqlite3* database, user* usr) {
 
 int get_user_with_username(sqlite3* database, const char* username, user* usr) {
   return get_user_by_username(database, username, usr);
+}
+
+int archive_order(sqlite3* database, const order* archived_order) {
+  return insert_archive(database, archived_order);
+}
+
+void getArchivedOrders(sqlite3* database, int userID, order** orders_out,
+                       int* count_out) {
+  int result =
+      get_user_archived_orders(database, userID, orders_out, count_out);
+  if (result != SQLITE_OK) {
+    fprintf(
+        stderr,
+        "Error: Failed to retrieve archived orders. SQLite error code: %d\n",
+        result);
+    *orders_out = NULL;
+    *count_out = 0;
+  }
 }

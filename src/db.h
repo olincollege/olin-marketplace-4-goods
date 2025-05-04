@@ -412,3 +412,56 @@ int get_user_inventories(sqlite3* database, user* user_out);
 
 int get_user_by_username(sqlite3* database, const char* username,
                          user* user_out);
+
+/**
+ * Inserts an archived order into the "archives" table in the SQLite database.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param archived_order A pointer to the order structure containing the data to
+ * be archived.
+ * @return SQLITE_OK on success, or an SQLite error code on failure.
+ *
+ * This function prepares an SQL INSERT statement to add a new record to the
+ * "archives" table. It binds the fields of the `archived_order` structure to
+ * the appropriate placeholders in the SQL statement and executes the statement.
+ * If the operation fails at any step, an error message is printed to `stderr`,
+ * and the corresponding SQLite error code is returned.
+ */
+int insert_archive(sqlite3* database, const order* archived_order);
+
+/**
+ * Retrieves all archived orders for a specific user from the "archives" table
+ * in the SQLite database.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param userID The ID of the user whose archived orders are to be retrieved.
+ * @param orders_out A pointer to a dynamically allocated array of `order`
+ * structures to store the results.
+ * @param count_out A pointer to an integer to store the number of retrieved
+ * orders.
+ * @return SQLITE_OK on success, or an SQLite error code on failure.
+ *
+ * This function prepares an SQL SELECT statement to query the "archives" table
+ * for orders associated with the specified `userID`. It dynamically allocates
+ * memory to store the results and populates the `orders_out` array with the
+ * retrieved data. If memory allocation or any SQLite operation fails, an error
+ * message is printed to `stderr`, and the corresponding SQLite error code is
+ * returned.
+ */
+int get_user_archived_orders(sqlite3* database, int userID, order** orders_out,
+                             int* count_out);
+
+/**
+ * Assigns a timestamp to the specified order and updates it in the database.
+ *
+ * This function retrieves the current timestamp, assigns it to the provided
+ * order, and updates the corresponding record in the SQLite database.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param order_to_update A pointer to the order structure that needs to be
+ * updated with the current timestamp.
+ * @return An integer indicating the success or failure of the operation:
+ *         - 0 on success.
+ *         - A non-zero error code on failure.
+ */
+int assign_order_timestamp(sqlite3* database, order* order_to_update);
