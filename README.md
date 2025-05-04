@@ -174,11 +174,3 @@ Cancels a buy/sell order.
 Views the top 5 buy/sell orders for a specific item.
 
 - **item**: The name of the item to check.
-
-```
-
-```
-
-```
-
-```
