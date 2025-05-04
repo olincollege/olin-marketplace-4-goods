@@ -157,6 +157,18 @@ int buy(sqlite3* database, order* ord) {
     return -1;
   }
 
+  // Archive the matched order
+  if (archive_order(database, &matched_order) != 0) {
+    fprintf(stderr, "Error: Failed to archive matched order.\n");
+    return -1;
+  }
+
+  // Archive the buy order
+  if (archive_order(database, ord) != 0) {
+    fprintf(stderr, "Error: Failed to archive buy order.\n");
+    return -1;
+  }
+
   // Update quantities
   if (ord->quantity > matched_order.quantity) {
     ord->quantity -= matched_order.quantity;
@@ -217,6 +229,18 @@ int sell(sqlite3* database, order* ord) {
   order matched_order;
   if (get_order(database, result, &matched_order) != 0) {
     fprintf(stderr, "Error: Failed to retrieve matching order.\n");
+    return -1;
+  }
+
+  // Archive the matched order
+  if (archive_order(database, &matched_order) != 0) {
+    fprintf(stderr, "Error: Failed to archive matched order.\n");
+    return -1;
+  }
+
+  // Archive the sell order
+  if (archive_order(database, ord) != 0) {
+    fprintf(stderr, "Error: Failed to archive sell order.\n");
     return -1;
   }
 
@@ -294,4 +318,22 @@ void viewItemOrders(sqlite3* database, int itemID, order** buy_orders,
 
 int get_user_inventory(sqlite3* database, user* usr) {
   return get_user_inventories(database, usr);
+}
+
+int archive_order(sqlite3* database, const order* archived_order) {
+  return insert_archive(database, archived_order);
+}
+
+void getArchivedOrders(sqlite3* database, int userID, order** orders_out,
+                       int* count_out) {
+  int result =
+      get_user_archived_orders(database, userID, orders_out, count_out);
+  if (result != SQLITE_OK) {
+    fprintf(
+        stderr,
+        "Error: Failed to retrieve archived orders. SQLite error code: %d\n",
+        result);
+    *orders_out = NULL;
+    *count_out = 0;
+  }
 }

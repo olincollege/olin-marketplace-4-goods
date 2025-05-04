@@ -618,3 +618,96 @@ int get_user_inventories(sqlite3* database, user* user_out) {
   sqlite3_finalize(stmt);
   return SQLITE_NOTFOUND;
 }
+
+int insert_archive(sqlite3* database, const order* archived_order) {
+  const char* sql =
+      "INSERT INTO archives (item, buyOrSell, quantity, unitPrice, userID, "
+      "created_at) "
+      "VALUES (?, ?, ?, ?, ?, ?);";
+
+  sqlite3_stmt* stmt = NULL;
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to prepare the insert_archive statement: %s\n",
+            sqlite3_errmsg(database));
+    return res;
+  }
+
+  sqlite3_bind_int(stmt, 1, archived_order->item);
+  sqlite3_bind_int(stmt, 2, archived_order->buyOrSell);
+  sqlite3_bind_int(stmt, 3, archived_order->quantity);
+  sqlite3_bind_double(stmt, 4, archived_order->unitPrice);
+  sqlite3_bind_int(stmt, 5, archived_order->userID);
+  sqlite3_bind_text(stmt, 6, archived_order->created_at, -1, SQLITE_TRANSIENT);
+
+  res = sqlite3_step(stmt);
+  if (res != SQLITE_DONE) {
+    fprintf(stderr, "Failed to execute the insert_archive statement: %s\n",
+            sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return res;
+  }
+
+  sqlite3_finalize(stmt);
+  return SQLITE_OK;
+}
+
+int get_user_archived_orders(sqlite3* database, int userID, order** orders_out,
+                             int* count_out) {
+  const char* sql =
+      "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, "
+      "created_at "
+      "FROM archives WHERE userID = ?;";
+  sqlite3_stmt* stmt = NULL;
+
+  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (res != SQLITE_OK) {
+    fprintf(stderr,
+            "Failed to prepare the get_user_archived_orders statement: %s\n",
+            sqlite3_errmsg(database));
+    return res;
+  }
+
+  sqlite3_bind_int(stmt, 1, userID);
+
+  int capacity = 10;
+  int count = 0;
+  order* orders = (order*)malloc(sizeof(order) * capacity);
+  if (orders == NULL) {
+    fprintf(stderr, "Unable to allocate memory for archived orders.\n");
+    sqlite3_finalize(stmt);
+    return SQLITE_NOMEM;
+  }
+
+  while ((res = sqlite3_step(stmt)) == SQLITE_ROW) {
+    if (count >= capacity) {
+      capacity *= 2;
+      order* temp = (order*)realloc(orders, sizeof(order) * capacity);
+      if (temp == NULL) {
+        fprintf(stderr, "Unable to reallocate memory for archived orders.\n");
+        free(orders);
+        sqlite3_finalize(stmt);
+        return SQLITE_NOMEM;
+      }
+      orders = temp;
+    }
+
+    orders[count].orderID = sqlite3_column_int(stmt, 0);
+    orders[count].item = sqlite3_column_int(stmt, 1);
+    orders[count].buyOrSell = sqlite3_column_int(stmt, 2);
+    orders[count].quantity = sqlite3_column_int(stmt, 3);
+    orders[count].unitPrice = sqlite3_column_double(stmt, 4);
+    orders[count].userID = sqlite3_column_int(stmt, 5);
+    const unsigned char* created_at = sqlite3_column_text(stmt, 6);
+    orders[count].created_at = strdup((const char*)created_at);
+
+    count++;
+  }
+
+  sqlite3_finalize(stmt);
+
+  *orders_out = orders;
+  *count_out = count;
+
+  return SQLITE_OK;
+}
