@@ -133,7 +133,6 @@ int free_user(user* usr) {
   free(usr);  // Free the user struct
   return 0;   // Return 0 on successful free
 }
-
 int buy(sqlite3* database, order* ord) {
   user current_user;
   if (get_user(database, ord->userID, &current_user) != 0) {
@@ -170,12 +169,51 @@ int buy(sqlite3* database, order* ord) {
   }
 
   // Update quantities
-  if (ord->quantity > matched_order.quantity) {
-    ord->quantity -= matched_order.quantity;
-    matched_order.quantity = 0;
-  } else {
-    matched_order.quantity -= ord->quantity;
-    ord->quantity = 0;
+  int transaction_quantity = (ord->quantity > matched_order.quantity)
+                                 ? matched_order.quantity
+                                 : ord->quantity;
+  double transaction_cost = transaction_quantity * matched_order.unitPrice;
+
+  ord->quantity -= transaction_quantity;
+  matched_order.quantity -= transaction_quantity;
+
+  // Update user balances
+  current_user.OMG -= transaction_cost;
+  if (ord->item == COIN_OMG) {
+    current_user.OMG += transaction_quantity;
+  } else if (ord->item == COIN_DOGE) {
+    current_user.DOGE += transaction_quantity;
+  } else if (ord->item == COIN_BTC) {
+    current_user.BTC += transaction_quantity;
+  } else if (ord->item == COIN_ETH) {
+    current_user.ETH += transaction_quantity;
+  }
+
+  if (update_user_balance(database, &current_user) != 0) {
+    fprintf(stderr, "Error: Failed to update buyer's balance.\n");
+    return -1;
+  }
+
+  user seller_user;
+  if (get_user(database, matched_order.userID, &seller_user) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve seller information.\n");
+    return -1;
+  }
+
+  seller_user.OMG += transaction_cost;
+  if (matched_order.item == COIN_OMG) {
+    seller_user.OMG -= transaction_quantity;
+  } else if (matched_order.item == COIN_DOGE) {
+    seller_user.DOGE -= transaction_quantity;
+  } else if (matched_order.item == COIN_BTC) {
+    seller_user.BTC -= transaction_quantity;
+  } else if (matched_order.item == COIN_ETH) {
+    seller_user.ETH -= transaction_quantity;
+  }
+
+  if (update_user_balance(database, &seller_user) != 0) {
+    fprintf(stderr, "Error: Failed to update seller's balance.\n");
+    return -1;
   }
 
   // Delete or update the matched order
@@ -222,6 +260,7 @@ int sell(sqlite3* database, order* ord) {
     fprintf(stderr, "Error: Insufficient ETH to place the sell order.\n");
     return -1;
   }
+
   int result = find_matching_buy(database, ord);
   if (result == -1) {
     return insert_order(database, ord);
@@ -245,12 +284,52 @@ int sell(sqlite3* database, order* ord) {
   }
 
   // Update quantities
-  if (ord->quantity > matched_order.quantity) {
-    ord->quantity -= matched_order.quantity;
-    matched_order.quantity = 0;
-  } else {
-    matched_order.quantity -= ord->quantity;
-    ord->quantity = 0;
+  int transaction_quantity = (ord->quantity > matched_order.quantity)
+                                 ? matched_order.quantity
+                                 : ord->quantity;
+  double transaction_cost = transaction_quantity * matched_order.unitPrice;
+
+  ord->quantity -= transaction_quantity;
+  matched_order.quantity -= transaction_quantity;
+
+  // Update user balances
+  if (ord->item == COIN_OMG) {
+    current_user.OMG -= transaction_quantity;
+  } else if (ord->item == COIN_DOGE) {
+    current_user.DOGE -= transaction_quantity;
+  } else if (ord->item == COIN_BTC) {
+    current_user.BTC -= transaction_quantity;
+  } else if (ord->item == COIN_ETH) {
+    current_user.ETH -= transaction_quantity;
+  }
+
+  current_user.OMG += transaction_cost;
+
+  if (update_user_balance(database, &current_user) != 0) {
+    fprintf(stderr, "Error: Failed to update seller's balance.\n");
+    return -1;
+  }
+
+  user buyer_user;
+  if (get_user(database, matched_order.userID, &buyer_user) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve buyer information.\n");
+    return -1;
+  }
+
+  buyer_user.OMG -= transaction_cost;
+  if (matched_order.item == COIN_OMG) {
+    buyer_user.OMG += transaction_quantity;
+  } else if (matched_order.item == COIN_DOGE) {
+    buyer_user.DOGE += transaction_quantity;
+  } else if (matched_order.item == COIN_BTC) {
+    buyer_user.BTC += transaction_quantity;
+  } else if (matched_order.item == COIN_ETH) {
+    buyer_user.ETH += transaction_quantity;
+  }
+
+  if (update_user_balance(database, &buyer_user) != 0) {
+    fprintf(stderr, "Error: Failed to update buyer's balance.\n");
+    return -1;
   }
 
   // Delete or update the matched order
