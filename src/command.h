@@ -185,3 +185,44 @@ void viewItemOrders(sqlite3* database, int itemID, order** buy_orders,
  *         `get_user_inventories`.
  */
 int get_user_inventory(sqlite3* database, user* usr);
+
+/**
+ * @brief Archives an order in the database.
+ *
+ * This function moves an order to the archive table in the database.
+ *
+ * @param database Pointer to the SQLite database connection.
+ * @param archived_order Pointer to the order to be archived.
+ * @return 0 on success, or an error code on failure.
+ */
+int archive_order(sqlite3* database, const order* archived_order);
+
+/**
+ * @brief Retrieves archived orders for a specific user.
+ *
+ * This function fetches all archived orders associated with a given user ID.
+ *
+ * @param database Pointer to the SQLite database connection.
+ * @param userID The ID of the user whose archived orders are to be retrieved.
+ * @param orders_out Pointer to an array of order structs to store the retrieved
+ * orders.
+ * @param count_out Pointer to an integer to store the number of retrieved
+ * orders.
+ */
+void getArchivedOrders(sqlite3* database, int userID, order** orders_out,
+                       int* count_out);
+/**
+ * Frees the memory allocated for an array of orders and their associated data.
+ *
+ * @param orderList A pointer to the array of orders to be freed. Each order in
+ * the array may contain dynamically allocated memory that needs to be released.
+ * @param orderCount The number of orders in the array.
+ * @return Returns 0 on successful memory deallocation. If the provided
+ * orderList is NULL, the function returns -1 to indicate an error.
+ *
+ * This function iterates through the array of orders, freeing any dynamically
+ * allocated memory associated with each order (e.g., the `created_at` string).
+ * After processing all orders, it frees the memory allocated for the array
+ * itself.
+ */
+int free_order_list(order* orderList, int orderCount);
