@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <string.h>  // Include for strlen and strcpy
 
-#include "util.h"
-
 int open_db(sqlite3** database) {
   *database = open_database();
   if (*database == NULL) {
