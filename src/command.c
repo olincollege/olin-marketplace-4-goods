@@ -137,16 +137,28 @@ user* create_user(int userID, const char* username, const char* password,
   return new_user;  // Return the created user
 }
 
-int free_user(user* usr) {
-  if (usr == NULL) {
-    return -1;  // Return -1 if the user is NULL
+int free_user(user* user_ptr) {
+  if (user_ptr == NULL) {
+    return -1;
   }
 
-  if (usr->name != NULL) {
-    free(usr->name);  // Free the name string
+  if (user_ptr->username != NULL) {
+    free(user_ptr->username);
+    user_ptr->username = NULL;
   }
-  free(usr);  // Free the user struct
-  return 0;   // Return 0 on successful free
+
+  if (user_ptr->password != NULL) {
+    free(user_ptr->password);
+    user_ptr->password = NULL;
+  }
+
+  if (user_ptr->name != NULL) {
+    free(user_ptr->name);
+    user_ptr->name = NULL;
+  }
+
+  free(user_ptr);
+  return 0;
 }
 
 int buy(sqlite3* database, order* ord) {
@@ -244,7 +256,7 @@ void myOrders(sqlite3* database, int userID, order** orderList,
     fprintf(stderr,
             "Error: Failed to retrieve user orders. SQLite error code: %d\n",
             result);
-    *orderList = NULL;
+    orderList = NULL;
     *orderCount = 0;
   }
 }

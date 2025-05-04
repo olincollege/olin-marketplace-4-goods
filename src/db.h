@@ -357,7 +357,7 @@ int update_user_balance(sqlite3* database, const user* updated_user);
  *         Returns 0 on success, or a non-zero error code on failure.
  */
 
-int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
+int get_user_all_orders(sqlite3* database, int userID, order** orders_out,
                         int* count_out);
 
 /**

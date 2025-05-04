@@ -271,10 +271,25 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
     if (getline(&buffer, &buf_size, comm_file) == -1) {
       error_and_exit("Can't get line");
     }
+
     // Process the command
     string_array* command_tokens = tokenize_line(buffer);
     if (strcasecmp(command_tokens->strings[0], "myInventory") == 0) {
       // Handle myInventory
+      user current_user = {.userID = userID};
+      if (get_user_inventories(database, &current_user) != SQLITE_OK) {
+        if (fputs("Error retrieving inventory!\r\n", comm_file) == EOF) {
+          error_and_exit("Couldn't send error message");
+        }
+        (void)fflush(comm_file);
+        continue;
+      }
+      (void)fprintf(comm_file, "Your current inventory:\r\n");
+      (void)fprintf(comm_file, "OMG: %.2f\r\n", current_user.OMG);
+      (void)fprintf(comm_file, "DOGE: %.2f\r\n", current_user.DOGE);
+      (void)fprintf(comm_file, "ETH: %.2f\r\n", current_user.ETH);
+      (void)fprintf(comm_file, "BTC: %.2f\r\n", current_user.BTC);
+      (void)fflush(comm_file);
 
     } else if (strcasecmp(command_tokens->strings[0], "buy") == 0) {
       // Handle buy
@@ -283,22 +298,73 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
         if (fputs("Can't create buy order!", comm_file) == EOF) {
           error_and_exit("Couldn't send line");
         }
+      } else {
+        if (fputs("Successfully created buy order!\r\n", comm_file) == EOF) {
+          error_and_exit("Couldn't send success message");
+        }
+        (void)fflush(comm_file);
       }
+
     } else if (strcasecmp(command_tokens->strings[0], "sell") == 0) {
       order* sell_order = create_order_from_string(command_tokens, userID);
       if (sell(database, sell_order) == -1) {
-        if (fputs("Can't create buy order!", comm_file) == EOF) {
+        if (fputs("Can't create sell order!", comm_file) == EOF) {
           error_and_exit("Couldn't send line");
         }
+      } else {
+        if (fputs("Successfully created sell order!\r\n", comm_file) == EOF) {
+          error_and_exit("Couldn't send success message");
+        }
+        (void)fflush(comm_file);
       }
+
     } else if (strcasecmp(command_tokens->strings[0], "myOrders") == 0) {
       // Handle "myOrders" command
+      order* order_list = NULL;
+      int order_count = 0;
+      myOrders(database, userID, &order_list, &order_count);
+      if (order_list != NULL) {
+        for (int i = 0; i < order_count; i++) {
+          const char* item;
+          if (order_list[i].item == COIN_DOGE) {
+            item = "DOGE";
+          } else if (order_list[i].item == COIN_BTC) {
+            item = "BTC";
+          } else if (order_list[i].item == COIN_ETH) {
+            item = "ETH";
+          } else if (order_list[i].item == COIN_OMG) {
+            item = "OMG";
+          } else {
+            item = "UNKNOWN";
+          }
+          if (fprintf(comm_file,
+                      "Order %d: Type: %s, Item: %s, Amount: %d, Price: "
+                      "%.2f, ID: %d\r\n",
+                      i + 1, order_list[i].buyOrSell == 0 ? "BUY" : "SELL",
+                      item, order_list[i].quantity, order_list[i].unitPrice,
+                      order_list[i].orderID) == -1) {
+            puts("Error sending order!");
+          }
+        }
+        (void)fflush(comm_file);
+        free(order_list);
+      } else {
+        if (fputs("No orders found.\r\n", comm_file) == EOF) {
+          error_and_exit("Couldn't send message");
+        }
+        (void)fflush(comm_file);
+      }
+
     } else if (strcasecmp(command_tokens->strings[0], "cancelOrder") == 0) {
       // Handle "cancelOrder" command
     } else if (strcasecmp(command_tokens->strings[0], "view") == 0) {
       // Handle "view" command
     } else {
       // Handle unknown command
+      if (fputs("Invalid syntax!\r\n", comm_file) == EOF) {
+        error_and_exit("Couldn't send success message");
+      }
+      (void)fflush(comm_file);
     }
 
     free(buffer);

@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "util.h"
+
 // Opens a database for use
 sqlite3* open_database(void) {
   sqlite3* database = NULL;
@@ -586,8 +588,11 @@ fail:
   return res;
 }
 
-int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
+int get_user_all_orders(sqlite3* database, int userID, order** orders_out,
                         int* count_out) {
+  *count_out = 0;
+  *orders_out = NULL;
+
   const char* sql =
       "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, "
       "created_at "
@@ -603,24 +608,28 @@ int get_user_all_orders(sqlite3* database, int userID, order* orders_out,
 
   sqlite3_bind_int(stmt, 1, userID);
 
-  int count = 0;
-
-  while ((res = sqlite3_step(stmt)) == SQLITE_ROW) {
-    orders_out[count].orderID = sqlite3_column_int(stmt, 0);
-    orders_out[count].item = sqlite3_column_int(stmt, 1);
-    orders_out[count].buyOrSell = sqlite3_column_int(stmt, 2);
-    orders_out[count].quantity = sqlite3_column_int(stmt, 3);
-    orders_out[count].unitPrice = sqlite3_column_double(stmt, 4);
-    orders_out[count].userID = sqlite3_column_int(stmt, 5);
+  while ((sqlite3_step(stmt)) == SQLITE_ROW) {
+    order new_order;
+    new_order.orderID = sqlite3_column_int(stmt, 0);
+    new_order.item = sqlite3_column_int(stmt, 1);
+    new_order.buyOrSell = sqlite3_column_int(stmt, 2);
+    new_order.quantity = sqlite3_column_int(stmt, 3);
+    new_order.unitPrice = sqlite3_column_double(stmt, 4);
+    new_order.userID = sqlite3_column_int(stmt, 5);
     const unsigned char* created_at = sqlite3_column_text(stmt, 6);
-    orders_out[count].created_at = strdup((const char*)created_at);
+    new_order.created_at = strdup((const char*)created_at);
 
-    count++;
+    order* temp =
+        realloc(*orders_out, (size_t)(*count_out + 1) * sizeof(order));
+    if (temp == NULL) {
+      error_and_exit("Realloc failed");
+    }
+    *orders_out = temp;
+    (*orders_out)[*count_out] = new_order;
+    (*count_out)++;
   }
 
   sqlite3_finalize(stmt);
-
-  *count_out = count;
 
   return SQLITE_OK;
 }
