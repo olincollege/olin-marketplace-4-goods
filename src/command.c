@@ -135,6 +135,18 @@ int free_user(user* usr) {
 }
 
 int buy(sqlite3* database, order* ord) {
+  user current_user;
+  if (get_user(database, ord->userID, &current_user) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve user information.\n");
+    return -1;
+  }
+
+  double total_cost = ord->quantity * ord->unitPrice;
+  if (current_user.OMG < total_cost) {
+    fprintf(stderr, "Error: Insufficient funds to place the buy order.\n");
+    return -1;
+  }
+
   int result = find_matching_sell(database, ord);
   if (result == -1) {
     return insert_order(database, ord);
@@ -179,6 +191,25 @@ int buy(sqlite3* database, order* ord) {
 }
 
 int sell(sqlite3* database, order* ord) {
+  user current_user;
+  if (get_user(database, ord->userID, &current_user) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve user information.\n");
+    return -1;
+  }
+
+  if (ord->item == COIN_OMG && current_user.OMG < ord->quantity) {
+    fprintf(stderr, "Error: Insufficient OMG to place the sell order.\n");
+    return -1;
+  } else if (ord->item == COIN_DOGE && current_user.DOGE < ord->quantity) {
+    fprintf(stderr, "Error: Insufficient DOGE to place the sell order.\n");
+    return -1;
+  } else if (ord->item == COIN_BTC && current_user.BTC < ord->quantity) {
+    fprintf(stderr, "Error: Insufficient BTC to place the sell order.\n");
+    return -1;
+  } else if (ord->item == COIN_ETH && current_user.ETH < ord->quantity) {
+    fprintf(stderr, "Error: Insufficient ETH to place the sell order.\n");
+    return -1;
+  }
   int result = find_matching_buy(database, ord);
   if (result == -1) {
     return insert_order(database, ord);

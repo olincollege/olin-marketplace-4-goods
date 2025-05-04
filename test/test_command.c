@@ -123,7 +123,7 @@ Test(test_command_db, test_sell_with_two_users) {
   res = buy(database, buy_order1);
   cr_assert_eq(res, 0, "Expected buy to return 0, but got %d", res);
 
-  order* buy_order2 = create_order(1, BUY, 15, 14.5, user1.userID);
+  order* buy_order2 = create_order(1, BUY, 2, 14.5, user1.userID);
   cr_assert_not_null(
       buy_order2,
       "Expected create_order to return a valid order, but got NULL");
