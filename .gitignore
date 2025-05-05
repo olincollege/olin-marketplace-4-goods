@@ -51,10 +51,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-<<<<<<< Updated upstream
 build/
-=======
 *.DS_Store
 .devcontainer/
->>>>>>> Stashed changes
 .vscode/
