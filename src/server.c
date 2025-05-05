@@ -262,6 +262,7 @@ static void handle_cancel_order(FILE* comm_file, int userID, sqlite3* database,
                                 string_array* command_tokens);
 static void handle_view(FILE* comm_file, int userID, sqlite3* database,
                         string_array* command_tokens);
+static void handle_help(FILE* comm_file);
 
 // Main function
 void echo(FILE* comm_file, int userID, sqlite3* database) {
@@ -307,9 +308,12 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
     } else if (strcasecmp(command_tokens->strings[0], "view") == 0) {
       // Handles view command
       handle_view(comm_file, userID, database, command_tokens);
+    } else if (strcasecmp(command_tokens->strings[0], "help") == 0) {
+      // Handles help command
+      handle_view(comm_file, userID, database, command_tokens);
     } else {
       // Handle unknown command
-      if (fputs("Invalid syntax!\r\n", comm_file) == EOF) {
+      if (fputs("Invalid syntax! Try help. \r\n", comm_file) == EOF) {
         error_and_exit("Couldn't send error message");
       }
       (void)fflush(comm_file);
@@ -359,6 +363,10 @@ static void handle_my_inventory(FILE* comm_file, int userID,
 // Handle the buy command
 static void handle_buy(FILE* comm_file, int userID, sqlite3* database,
                        string_array* command_tokens) {
+  if (validate_command_args(comm_file, command_tokens, 4) != 0) {
+    return;
+  }
+
   order* buy_order = create_order_from_string(command_tokens, userID);
   if (buy(database, buy_order) == -1) {
     if (fputs("Can't create buy order!\r\n", comm_file) == EOF) {
@@ -375,6 +383,9 @@ static void handle_buy(FILE* comm_file, int userID, sqlite3* database,
 // Handle the sell command
 static void handle_sell(FILE* comm_file, int userID, sqlite3* database,
                         string_array* command_tokens) {
+  if (validate_command_args(comm_file, command_tokens, 4) != 0) {
+    return;
+  }
   order* sell_order = create_order_from_string(command_tokens, userID);
   if (sell(database, sell_order) == -1) {
     if (fputs("Can't create sell order!\r\n", comm_file) == EOF) {
@@ -395,7 +406,46 @@ static void handle_my_orders(FILE* comm_file, int userID, sqlite3* database) {
 
   myOrders(database, userID, &order_list, &order_count);
 
+  if (fputs("Open Orders:\r\n", comm_file) == EOF) {
+    error_and_exit("Couldn't send message");
+  }
   if (order_list != NULL) {
+    for (int i = 0; i < order_count; i++) {
+      const char* item = coin_type_to_string(order_list[i].item);
+
+      if (fprintf(comm_file,
+                  "Order %d: Type: %s, Item: %s, Amount: %d, Price: "
+                  "%.2f, ID: %d\r\n",
+                  i + 1, order_list[i].buyOrSell == 0 ? "BUY" : "SELL", item,
+                  order_list[i].quantity, order_list[i].unitPrice,
+                  order_list[i].orderID) == -1) {
+        puts("Error sending order!");
+      }
+      if (fputs("------------------------------------\r\n", comm_file) == EOF) {
+        error_and_exit("Couldn't send message");
+      }
+    }
+    (void)fflush(comm_file);
+    free(order_list);
+  } else {
+    if (fputs("No open orders.\r\n", comm_file) == EOF) {
+      error_and_exit("Couldn't send message");
+    }
+    if (fputs("------------------------------------\r\n", comm_file) == EOF) {
+      error_and_exit("Couldn't send message");
+    }
+    (void)fflush(comm_file);
+  }
+
+  order_list = NULL;
+  order_count = 0;
+
+  getArchivedOrders(database, userID, &order_list, &order_count);
+
+  if (fputs("Archived Orders:\r\n", comm_file) == EOF) {
+    error_and_exit("Couldn't send message");
+  }
+  if (order_list != NULL && order_count != 0) {
     for (int i = 0; i < order_count; i++) {
       const char* item = coin_type_to_string(order_list[i].item);
 
@@ -411,7 +461,7 @@ static void handle_my_orders(FILE* comm_file, int userID, sqlite3* database) {
     (void)fflush(comm_file);
     free(order_list);
   } else {
-    if (fputs("No orders found.\r\n", comm_file) == EOF) {
+    if (fputs("No archived orders.\r\n", comm_file) == EOF) {
       error_and_exit("Couldn't send message");
     }
     (void)fflush(comm_file);
@@ -421,12 +471,7 @@ static void handle_my_orders(FILE* comm_file, int userID, sqlite3* database) {
 // Handle the cancelOrder command
 static void handle_cancel_order(FILE* comm_file, int userID, sqlite3* database,
                                 string_array* command_tokens) {
-  if (command_tokens->size != 2) {
-    if (fputs("Invalid command syntax! Usage: cancelOrder <orderID>\r\n",
-              comm_file) == EOF) {
-      error_and_exit("Couldn't send error message");
-    }
-    (void)fflush(comm_file);
+  if (validate_command_args(comm_file, command_tokens, 2) != 0) {
     return;
   }
 
@@ -455,6 +500,10 @@ static void handle_cancel_order(FILE* comm_file, int userID, sqlite3* database,
 // Handle the view command
 static void handle_view(FILE* comm_file, int userID, sqlite3* database,
                         string_array* command_tokens) {
+  if (validate_command_args(comm_file, command_tokens, 2) != 0) {
+    return;
+  }
+
   if (command_tokens->size != 2) {
     if (fputs("Invalid command syntax! Usage: view <coin>\r\n", comm_file) ==
         EOF) {
@@ -546,4 +595,47 @@ static void handle_view(FILE* comm_file, int userID, sqlite3* database,
   if (sell_orders != NULL) {
     free(sell_orders);
   }
+}
+
+// Handle help command
+static void handle_help(FILE* comm_file) {
+  if (fputs("Available commands:\r\n", comm_file) == EOF) {
+    error_and_exit("Couldn't send help message");
+  }
+  if (fputs("myInventory\r\nLists the inventory for the current user.\r\n\r\n",
+            comm_file) == EOF) {
+    error_and_exit("Couldn't send help message");
+  }
+  if (fputs("buy <item> <price> <quantity>\r\nPosts a buy order.\r\n"
+            "item: The name of the commodity to buy.\r\n"
+            "price: The unit price the client is willing to buy at.\r\n"
+            "quantity: The number of commodities to buy.\r\n\r\n",
+            comm_file) == EOF) {
+    error_and_exit("Couldn't send help message");
+  }
+  if (fputs("sell <item> <price> <quantity>\r\nPosts a sell order.\r\n"
+            "item: The name of the commodity to sell.\r\n"
+            "price: The unit price the client is willing to sell at.\r\n"
+            "quantity: The number of commodities to sell.\r\n\r\n",
+            comm_file) == EOF) {
+    error_and_exit("Couldn't send help message");
+  }
+  if (fputs("myOrders\r\nLists all active buy/sell orders submitted by the "
+            "current user.\r\n"
+            "Returns the IDs of all active orders.\r\n\r\n",
+            comm_file) == EOF) {
+    error_and_exit("Couldn't send help message");
+  }
+  if (fputs("cancelOrder <orderID>\r\nCancels a buy/sell order.\r\n"
+            "orderID: The ID of the order to cancel.\r\n\r\n",
+            comm_file) == EOF) {
+    error_and_exit("Couldn't send help message");
+  }
+  if (fputs("view <item>\r\nViews the top 5 buy/sell orders for a specific "
+            "item.\r\n"
+            "item: The name of the item to check.\r\n\r\n",
+            comm_file) == EOF) {
+    error_and_exit("Couldn't send help message");
+  }
+  (void)fflush(comm_file);
 }

@@ -89,3 +89,15 @@ const char* coin_type_to_string(int coin_type) {
       return "UNKNOWN";
   }
 }
+
+int validate_command_args(FILE* comm_file, string_array* command_tokens,
+                          int expected_count) {
+  if (command_tokens->size != expected_count) {
+    if (fputs("Invalid command syntax! Try help.", comm_file) == EOF) {
+      error_and_exit("Couldn't send error message");
+    }
+    (void)fflush(comm_file);
+    return 0;
+  }
+  return 1;
+}

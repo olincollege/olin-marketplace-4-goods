@@ -842,7 +842,7 @@ int get_user_archived_orders(sqlite3* database, int userID, order** orders_out,
     return SQLITE_NOMEM;
   }
 
-  while ((res = sqlite3_step(stmt)) == SQLITE_ROW) {
+  while ((sqlite3_step(stmt)) == SQLITE_ROW) {
     if (count >= capacity) {
       capacity *= 2;
       order* temp = (order*)realloc(orders, sizeof(order) * capacity);

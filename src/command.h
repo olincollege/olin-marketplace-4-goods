@@ -120,15 +120,6 @@ user* create_user(int userID, const char* name, const char* username,
 int free_user(user* usr);  // Defined below
 
 /**
- * @brief Retrieves the inventory of a user.
- *
- * @param userID The ID of the user.
- * @param cur_user Pointer to a user struct to store the retrieved user data.
- * @return 0 on success, or exits the program on failure.
- */
-int myInventory(int userID, user** cur_user);
-
-/**
  * @brief Places a buy order in the database.
  *
  * @param database Pointer to the SQLite database connection.
