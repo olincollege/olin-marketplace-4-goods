@@ -1,6 +1,7 @@
 #include "util.h"
 
 #include <ctype.h>   // isspace
+#include <stdarg.h>  // va_list, va_start, va_end
 #include <stdint.h>  // uint16_t
 #include <stdio.h>   // perror
 #include <stdlib.h>  // exit, EXIT_FAILURE
@@ -58,4 +59,16 @@ string_array* tokenize_line(const char* line) {
     }
   }
   return tokens;
+}
+
+// Helper function to format a string and return it
+char* fprintf_to_string(const char* format, ...) {
+  va_list args;
+  char* result = NULL;
+
+  va_start(args, format);
+  vasprintf(&result, format, args);
+  va_end(args);
+
+  return result;
 }
