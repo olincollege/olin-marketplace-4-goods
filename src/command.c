@@ -457,10 +457,17 @@ void getArchivedOrders(sqlite3* database, int userID, order** orders_out,
   }
 }
 
-int cancelOrder(sqlite3* database, int orderID) {
+int cancelOrder(sqlite3* database, int orderID, int currentUserID) {
   order ord;
   if (get_order(database, orderID, &ord) != 0) {
     fprintf(stderr, "Error: Failed to retrieve order with ID %d.\n", orderID);
+    return -1;
+  }
+
+  // Verify that the order belongs to the current user
+  if (ord.userID != currentUserID) {
+    fprintf(stderr, "Error: Unauthorized attempt to cancel order with ID %d.\n",
+            orderID);
     return -1;
   }
 
