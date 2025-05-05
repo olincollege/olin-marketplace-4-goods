@@ -90,3 +90,21 @@ string_array* tokenize_line(const char* line);
  * `free()`.
  */
 char* fprintf_to_string(const char* format, ...);
+
+/**
+ * Converts a coin type identifier to its corresponding string representation.
+ *
+ * @param coin_type An integer representing the coin type. Expected values are:
+ *                  - COIN_DOGE: Represents Dogecoin.
+ *                  - COIN_BTC: Represents Bitcoin.
+ *                  - COIN_ETH: Represents Ethereum.
+ *                  - COIN_OMG: Represents OmiseGO.
+ *
+ * @return A constant string representing the coin type:
+ *         - "DOGE" for COIN_DOGE
+ *         - "BTC" for COIN_BTC
+ *         - "ETH" for COIN_ETH
+ *         - "OMG" for COIN_OMG
+ *         - "UNKNOWN" for any unrecognized coin type
+ */
+const char* coin_type_to_string(int coin_type);

@@ -7,6 +7,8 @@
 #include <stdlib.h>  // exit, EXIT_FAILURE
 #include <unistd.h>  // close
 
+#include "db.h"
+
 const uint16_t PORT = 4242;
 const size_t INITIAL_TOKENS_CAPACITY = 4;
 
@@ -71,4 +73,19 @@ char* fprintf_to_string(const char* format, ...) {
   va_end(args);
 
   return result;
+}
+
+const char* coin_type_to_string(int coin_type) {
+  switch (coin_type) {
+    case COIN_DOGE:
+      return "DOGE";
+    case COIN_BTC:
+      return "BTC";
+    case COIN_ETH:
+      return "ETH";
+    case COIN_OMG:
+      return "OMG";
+    default:
+      return "UNKNOWN";
+  }
 }
