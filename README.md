@@ -59,7 +59,13 @@ sqlite3 --version
 
 To run Olin Marketplace for Goods:
 
-# Coins Available
+Navigate to `src/` and build the project. The user should then run the executable `run_server` in the 
+`build/src` directory, and the server should start. From there, end users can simply use telnet to connect
+to the server that needs to be on local network. The default port is 4242.
+
+## Features
+
+### Coins Available
 
 The platform uses the default OMG coins for trading any online commodities.
 
@@ -71,11 +77,63 @@ The platform currently only supports 3 types of online commodities as listed bel
 - **BTC**: Bitcoin, the first and most widely recognized cryptocurrency.
 - **ETH**: Ethereum, a decentralized platform and cryptocurrency.
 
-# Database Structure
+### User Commands
+
+#### 🔍 `myInventory`
+
+Lists the inventory for the current user.
+
+---
+
+#### 💸 `buy <item> <price> <quantity>`
+
+Posts a **buy order**.
+
+- **item**: The name of the commodity to buy.
+- **price**: The unit price the client is willing to buy at.
+- **quantity**: The number of commodities to buy.
+
+---
+
+#### 💰 `sell <item> <price> <quantity>`
+
+Posts a **sell order**.
+
+- **item**: The name of the commodity to sell.
+- **price**: The unit price the client is willing to sell at.
+- **quantity**: The number of commodities to sell.
+
+---
+
+#### 📜 `myOrders`
+
+Lists all active buy/sell orders submitted by the current user.
+
+- Returns the IDs of all active orders.
+
+---
+
+#### ❌ `cancelOrder <orderID>`
+
+Cancels a buy/sell order.
+
+- **orderID**: The ID of the order to cancel.
+
+---
+
+#### 📈 `view <item>`
+
+Views the top 5 buy/sell orders for a specific item.
+
+- **item**: The name of the item to check.
+
+## Implementation Details
+
+### Database Structure
 
 `database.db` is the default SQLite database file name that has 3 tables total as follows:
 
-## Table 1 - `users`
+#### Table 1 - `users`
 
 Stores the inventories and info of all users.
 
@@ -90,7 +148,7 @@ Stores the inventories and info of all users.
 | BTC      | INTEGER | Quantity of BTC coin (default 0)  |
 | ETH      | INTEGER | Quantity of ETH coin (default 0)  |
 
-## Table 2 - `orders`
+#### Table 2 - `orders`
 
 Stores information about all active orders in the market.
 
@@ -104,7 +162,7 @@ Stores information about all active orders in the market.
 | userID     | INTEGER  | ID of the user who placed the order                              |
 | created_at | DATETIME | Timestamp when the order was placed (default: CURRENT_TIMESTAMP) |
 
-## Table 3 - `archives`
+#### Table 3 - `archives`
 
 Stores information about all archived orders in the archives.
 
@@ -118,61 +176,9 @@ Stores information about all archived orders in the archives.
 | userID     | INTEGER  | ID of the user who placed the order                              |
 | created_at | DATETIME | Timestamp when the order was placed (default: CURRENT_TIMESTAMP) |
 
-# File Structure
+### File Structure
 
 - run_server.c
 - server.c (Oscar)
 - db.c (Rewa)
 - commands.c (Jack)
-
-# User Commands
-
-## 📦 Commodity Trading CLI Commands
-
-### 🔍 `myInventory`
-
-Lists the inventory for the current user.
-
----
-
-### 💸 `buy <item> <price> <quantity>`
-
-Posts a **buy order**.
-
-- **item**: The name of the commodity to buy.
-- **price**: The unit price the client is willing to buy at.
-- **quantity**: The number of commodities to buy.
-
----
-
-### 💰 `sell <item> <price> <quantity>`
-
-Posts a **sell order**.
-
-- **item**: The name of the commodity to sell.
-- **price**: The unit price the client is willing to sell at.
-- **quantity**: The number of commodities to sell.
-
----
-
-### 📜 `myOrders`
-
-Lists all active buy/sell orders submitted by the current user.
-
-- Returns the IDs of all active orders.
-
----
-
-### ❌ `cancelOrder <orderID>`
-
-Cancels a buy/sell order.
-
-- **orderID**: The ID of the order to cancel.
-
----
-
-### 📈 `view <item>`
-
-Views the top 5 buy/sell orders for a specific item.
-
-- **item**: The name of the item to check.

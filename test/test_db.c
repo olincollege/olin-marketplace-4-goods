@@ -97,17 +97,23 @@ Test(test_orders, test_insert_order) {
       .item = COIN_BTC,
       .buyOrSell = BUY,
       .quantity = 10,
-      .unitPrice = 100.50,
+      .unitPrice = 1.50,
       .userID = 1,
   };
 
-  // Insert a user to satisfy the foreign key constraint
-  const char* insert_user_sql =
-      "INSERT INTO users (name) VALUES ('Test User');";
-  char* errMsg = NULL;
-  int res = sqlite3_exec(database, insert_user_sql, NULL, NULL, &errMsg);
-  cr_assert_eq(res, SQLITE_OK, "Failed to insert user: %s", errMsg);
-  sqlite3_free(errMsg);
+  // Create a mock user
+  user new_user = {
+      .userID = 1,
+      .username = "testuser",
+      .password = "password123",
+      .name = "Test User",
+      .OMG = 100,
+      .DOGE = 200,
+      .BTC = 50,
+      .ETH = 75,
+  };
+  int user_id = 0;
+  int res = insert_user(database, &new_user, &user_id);
 
   // Call the function being tested
   res = insert_order(database, &new_order);
@@ -150,6 +156,8 @@ Test(test_users, test_insert_user) {
   // Create a mock user
   user new_user = {
       .userID = 1,
+      .username = "testuser",
+      .password = "password123",
       .name = "Test User",
       .OMG = 100,
       .DOGE = 200,
@@ -208,17 +216,23 @@ Test(test_orders, test_delete_order) {
       .item = COIN_BTC,
       .buyOrSell = BUY,
       .quantity = 10,
-      .unitPrice = 100.50,
+      .unitPrice = 1.50,
       .userID = 1,
   };
 
-  // Insert a user to satisfy the foreign key constraint
-  const char* insert_user_sql =
-      "INSERT INTO users (name) VALUES ('Test User');";
-  char* errMsg = NULL;
-  int res = sqlite3_exec(database, insert_user_sql, NULL, NULL, &errMsg);
-  cr_assert_eq(res, SQLITE_OK, "Failed to insert user: %s", errMsg);
-  sqlite3_free(errMsg);
+  // Create a mock user
+  user new_user = {
+      .userID = 1,
+      .username = "testuser",
+      .password = "password123",
+      .name = "Test User",
+      .OMG = 100,
+      .DOGE = 200,
+      .BTC = 50,
+      .ETH = 75,
+  };
+  int user_id = 0;
+  int res = insert_user(database, &new_user, &user_id);
 
   // Insert the order
   res = insert_order(database, &new_order);
@@ -268,77 +282,74 @@ Test(test_orders, test_get_item_all_orders) {
   create_tables(database);
 
   // Insert a user (required for foreign key constraint)
-  const char* insert_user_sql =
-      "INSERT INTO users (name) VALUES ('Test User');";
-  char* errMsg = NULL;
-  int res = sqlite3_exec(database, insert_user_sql, NULL, NULL, &errMsg);
-  cr_assert_eq(res, SQLITE_OK, "Failed to insert user: %s", errMsg);
-  sqlite3_free(errMsg);
+  user new_user = {
+      .userID = 1,
+      .username = "testuser",
+      .password = "password123",
+      .name = "Test User",
+      .OMG = 100,
+      .DOGE = 200,
+      .BTC = 50,
+      .ETH = 75,
+  };
+
+  int user_id = 0;
+  int res = insert_user(database, &new_user, &user_id);
+  cr_assert_eq(res, SQLITE_OK, "insert_user failed: %d", res);
 
   // Insert multiple orders (more than 5 for both buy and sell)
   order orders[] = {
       {.item = COIN_BTC,
        .buyOrSell = BUY,
-       .quantity = 5,
-       .unitPrice = 100.0,
-       .userID = 1},
+       .quantity = 1,
+       .unitPrice = 0.01,
+       .userID = user_id},
       {.item = COIN_BTC,
        .buyOrSell = BUY,
-       .quantity = 10,
-       .unitPrice = 110.0,
-       .userID = 1},
+       .quantity = 1,
+       .unitPrice = 0.02,
+       .userID = user_id},
       {.item = COIN_BTC,
        .buyOrSell = BUY,
-       .quantity = 15,
-       .unitPrice = 120.0,
-       .userID = 1},
+       .quantity = 1,
+       .unitPrice = 0.03,
+       .userID = user_id},
       {.item = COIN_BTC,
        .buyOrSell = BUY,
-       .quantity = 20,
-       .unitPrice = 130.0,
-       .userID = 1},
+       .quantity = 1,
+       .unitPrice = 0.04,
+       .userID = user_id},
       {.item = COIN_BTC,
        .buyOrSell = BUY,
-       .quantity = 25,
-       .unitPrice = 140.0,
-       .userID = 1},
-      {.item = COIN_BTC,
-       .buyOrSell = BUY,
-       .quantity = 30,
-       .unitPrice = 150.0,
-       .userID = 1},
+       .quantity = 1,
+       .unitPrice = 0.05,
+       .userID = user_id},
       {.item = COIN_BTC,
        .buyOrSell = SELL,
-       .quantity = 3,
-       .unitPrice = 90.0,
-       .userID = 1},
+       .quantity = 1,
+       .unitPrice = 0.005,
+       .userID = user_id},
       {.item = COIN_BTC,
        .buyOrSell = SELL,
-       .quantity = 6,
-       .unitPrice = 80.0,
-       .userID = 1},
+       .quantity = 1,
+       .unitPrice = 0.004,
+       .userID = user_id},
       {.item = COIN_BTC,
        .buyOrSell = SELL,
-       .quantity = 9,
-       .unitPrice = 70.0,
-       .userID = 1},
+       .quantity = 1,
+       .unitPrice = 0.003,
+       .userID = user_id},
       {.item = COIN_BTC,
        .buyOrSell = SELL,
-       .quantity = 12,
-       .unitPrice = 60.0,
-       .userID = 1},
+       .quantity = 1,
+       .unitPrice = 0.002,
+       .userID = user_id},
       {.item = COIN_BTC,
        .buyOrSell = SELL,
-       .quantity = 15,
-       .unitPrice = 50.0,
-       .userID = 1},
-      {.item = COIN_BTC,
-       .buyOrSell = SELL,
-       .quantity = 18,
-       .unitPrice = 40.0,
-       .userID = 1},
+       .quantity = 1,
+       .unitPrice = 0.001,
+       .userID = user_id},
   };
-
   for (int i = 0; i < sizeof(orders) / sizeof(orders[0]); i++) {
     res = insert_order(database, &orders[i]);
     cr_assert_eq(res, SQLITE_OK, "Failed to insert order %d: %d", i + 1, res);
@@ -400,19 +411,27 @@ Test(test_orders, test_update_order) {
   create_tables(database);
 
   // Insert a user to satisfy foreign key constraint
-  const char* insert_user_sql =
-      "INSERT INTO users (name) VALUES ('Test User');";
-  char* errMsg = NULL;
-  int res = sqlite3_exec(database, insert_user_sql, NULL, NULL, &errMsg);
-  cr_assert_eq(res, SQLITE_OK, "Failed to insert user: %s", errMsg);
-  sqlite3_free(errMsg);
+  user new_user = {
+      .userID = 1,
+      .username = "testuser",
+      .password = "password123",
+      .name = "Test User",
+      .OMG = 100,
+      .DOGE = 200,
+      .BTC = 50,
+      .ETH = 75,
+  };
+
+  int user_id = 0;
+  int res = insert_user(database, &new_user, &user_id);
+  cr_assert_eq(res, SQLITE_OK, "insert_user failed: %d", res);
 
   // Insert an order
   order new_order = {
       .item = COIN_BTC,
       .buyOrSell = BUY,
       .quantity = 10,
-      .unitPrice = 100.0,
+      .unitPrice = 1.0,
       .userID = 1,
   };
   res = insert_order(database, &new_order);
@@ -486,8 +505,10 @@ Test(test_orders, test_find_matching_buy) {
   // Create mock users
   user user1 = {
       .userID = 1,
+      .username = "testuser1",
+      .password = "password123",
       .name = "User One",
-      .OMG = 100,
+      .OMG = 1000,
       .DOGE = 200,
       .BTC = 50,
       .ETH = 75,
@@ -495,8 +516,10 @@ Test(test_orders, test_find_matching_buy) {
 
   user user2 = {
       .userID = 2,
+      .username = "testuser2",
+      .password = "password123",
       .name = "User Two",
-      .OMG = 150,
+      .OMG = 1500,
       .DOGE = 250,
       .BTC = 60,
       .ETH = 85,
@@ -515,7 +538,7 @@ Test(test_orders, test_find_matching_buy) {
       .item = COIN_BTC,
       .buyOrSell = BUY,
       .quantity = 10,
-      .unitPrice = 600.50,
+      .unitPrice = 6.50,
       .userID = 1,
   };
 
@@ -530,8 +553,8 @@ Test(test_orders, test_find_matching_buy) {
   order another_buy_order = {
       .item = COIN_BTC,
       .buyOrSell = BUY,
-      .quantity = 10,
-      .unitPrice = 101.00,
+      .quantity = 1,
+      .unitPrice = 11.00,
       .userID = 1,
   };
 
@@ -545,7 +568,7 @@ Test(test_orders, test_find_matching_buy) {
       .item = COIN_BTC,
       .buyOrSell = SELL,
       .quantity = 10,
-      .unitPrice = 90,
+      .unitPrice = 9,
       .userID = 2,
   };
 
@@ -579,6 +602,7 @@ Test(test_orders, test_find_matching_buy) {
   sqlite3_finalize(stmt);
   close_database(database);
 }
+
 Test(test_orders, test_get_user_all_orders) {
   // Open database
   sqlite3* database = open_database();
@@ -591,6 +615,8 @@ Test(test_orders, test_get_user_all_orders) {
   // Insert a user (required for foreign key constraint)
   user new_user = {
       .userID = 1,
+      .username = "testuser",
+      .password = "password123",
       .name = "Test User",
       .OMG = 100,
       .DOGE = 200,
@@ -606,17 +632,17 @@ Test(test_orders, test_get_user_all_orders) {
   order order1 = {.item = COIN_BTC,
                   .buyOrSell = BUY,
                   .quantity = 5,
-                  .unitPrice = 100.0,
+                  .unitPrice = 1.0,
                   .userID = new_user.userID};
   order order2 = {.item = COIN_BTC,
                   .buyOrSell = SELL,
-                  .quantity = 3,
+                  .quantity = 1,
                   .unitPrice = 90.0,
                   .userID = new_user.userID};
   order order3 = {.item = COIN_ETH,
                   .buyOrSell = BUY,
-                  .quantity = 2,
-                  .unitPrice = 200.0,
+                  .quantity = 1,
+                  .unitPrice = 2.0,
                   .userID = new_user.userID};
 
   res = insert_order(database, &order1);
@@ -627,7 +653,7 @@ Test(test_orders, test_get_user_all_orders) {
   cr_assert_eq(res, SQLITE_OK, "Failed to insert order3: %d", res);
 
   // Test get_user_all_orders
-  order orders[10];  // Allocate space for up to 10 orders
+  order orders[10] = {0};  // Initialize array to avoid uninitialized memory
   int order_count = 0;
   res = get_user_all_orders(database, new_user.userID, orders, &order_count);
   cr_assert_eq(res, SQLITE_OK, "get_user_all_orders failed: %d", res);
@@ -643,7 +669,10 @@ Test(test_orders, test_get_user_all_orders) {
         i + 1, orders[i].orderID, orders[i].item, orders[i].buyOrSell,
         orders[i].quantity, orders[i].unitPrice, orders[i].userID,
         orders[i].created_at);
-    free(orders[i].created_at);  // Free the allocated created_at string
+    if (orders[i].created_at) {
+      free(orders[i].created_at);   // Free the allocated created_at string
+      orders[i].created_at = NULL;  // Avoid dangling pointer
+    }
   }
 
   close_database(database);
