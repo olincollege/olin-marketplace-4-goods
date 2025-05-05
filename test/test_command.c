@@ -20,6 +20,8 @@ Test(test_command_db, test_buy) {
   // Create a mock user
   user new_user = {
       .userID = 1,
+      .username = "testuser",
+      .password = "password123",
       .name = "Test User",
       .OMG = 100,
       .DOGE = 200,
@@ -56,6 +58,8 @@ Test(test_command_db, test_sell) {
   // Create a mock user
   user new_user = {
       .userID = 1,
+      .username = "testuser",
+      .password = "password123",
       .name = "Test User",
       .OMG = 100,
       .DOGE = 200,
@@ -93,6 +97,8 @@ Test(test_command_db, test_sell_with_two_users) {
   // Create two mock users
   user user1 = {
       .userID = 1,
+      .username = "buyer1",
+      .password = "password1",
       .name = "Buyer1",
       .OMG = 100,
       .DOGE = 200,
@@ -102,6 +108,8 @@ Test(test_command_db, test_sell_with_two_users) {
 
   user user2 = {
       .userID = 2,
+      .username = "seller",
+      .password = "password2",
       .name = "Seller",
       .OMG = 50,
       .DOGE = 100,
@@ -117,7 +125,7 @@ Test(test_command_db, test_sell_with_two_users) {
   cr_assert_eq(res, 0, "Expected insert_user to return 0, but got %d", res);
 
   // User1 publishes two buy orders
-  order* buy_order1 = create_order(1, BUY, 10, 10.0, user1.userID);
+  order* buy_order1 = create_order(1, BUY, 1, 10.0, user1.userID);
   cr_assert_not_null(
       buy_order1,
       "Expected create_order to return a valid order, but got NULL");
@@ -164,6 +172,8 @@ Test(test_command_db, test_partial_match_sell_and_buy) {
   // Create two mock users
   user buyer = {
       .userID = 1,
+      .username = "buyer",
+      .password = "password1",
       .name = "Buyer",
       .OMG = 1000,
       .DOGE = 200,
@@ -173,6 +183,8 @@ Test(test_command_db, test_partial_match_sell_and_buy) {
 
   user seller = {
       .userID = 2,
+      .username = "seller",
+      .password = "password2",
       .name = "Seller",
       .OMG = 50,
       .DOGE = 100,
