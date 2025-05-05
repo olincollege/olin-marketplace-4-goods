@@ -441,7 +441,7 @@ static void handle_my_orders(FILE* comm_file, int userID, sqlite3* database) {
   order_list = NULL;
   order_count = 0;
 
-  getArchivedOrders(database, userID, &order_list, &order_count);
+  get_archived_orders(database, userID, &order_list, &order_count);
 
   if (fputs("Archived Orders:\r\n", comm_file) == EOF) {
     error_and_exit("Couldn't send message");
@@ -486,7 +486,7 @@ static void handle_cancel_order(FILE* comm_file, int userID, sqlite3* database,
     return;
   }
 
-  if (cancelOrder(database, orderID, userID) != 0) {
+  if (cancel_order(database, orderID, userID) != 0) {
     if (fputs("Failed to cancel order!\r\n", comm_file) == EOF) {
       error_and_exit("Couldn't send error message");
     }
@@ -536,8 +536,8 @@ static void handle_view(FILE* comm_file, int userID, sqlite3* database,
   order* sell_orders = NULL;
   int sell_count = 0;
 
-  viewItemOrders(database, item, &buy_orders, &buy_count, &sell_orders,
-                 &sell_count);
+  view_item_orders(database, item, &buy_orders, &buy_count, &sell_orders,
+                   &sell_count);
 
   // Print header and separator
   if (fprintf(comm_file,

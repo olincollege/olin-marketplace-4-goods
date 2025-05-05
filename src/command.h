@@ -160,8 +160,8 @@ void my_orders(sqlite3* database, int userID, order** orderList,
  * @param sell_orders Pointer to an array of sell order structs to be populated.
  * @param sell_count Pointer to an integer to store the count of sell orders.
  */
-void viewItemOrders(sqlite3* database, int itemID, order** buy_orders,
-                    int* buy_count, order** sell_orders, int* sell_count);
+void view_item_orders(sqlite3* database, int itemID, order** buy_orders,
+                      int* buy_count, order** sell_orders, int* sell_count);
 
 /**
  * @brief Retrieves the inventory of a specific user from the database.
@@ -219,8 +219,8 @@ int archive_order(sqlite3* database, const order* archived_order);
  * @param count_out Pointer to an integer to store the number of retrieved
  * orders.
  */
-void getArchivedOrders(sqlite3* database, int userID, order** orders_out,
-                       int* count_out);
+void get_archived_orders(sqlite3* database, int userID, order** orders_out,
+                         int* count_out);
 /**
  * Frees the memory allocated for an array of orders and their associated data.
  *
@@ -255,4 +255,4 @@ int free_order_list(order* orderList, int orderCount);
  * order/user, unauthorized access, update user balance, or delete the order).
  */
 
-int cancelOrder(sqlite3* database, int orderID, int currentUserID);
+int cancel_order(sqlite3* database, int orderID, int currentUserID);

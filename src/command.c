@@ -417,8 +417,8 @@ int free_order_list(order* orderList, int orderCount) {
   return 0;         // Return 0 on successful free
 }
 
-void viewItemOrders(sqlite3* database, int itemID, order** buy_orders,
-                    int* buy_count, order** sell_orders, int* sell_count) {
+void view_item_orders(sqlite3* database, int itemID, order** buy_orders,
+                      int* buy_count, order** sell_orders, int* sell_count) {
   int result = get_item_all_orders(database, itemID, buy_orders, buy_count,
                                    sell_orders, sell_count);
   if (result != SQLITE_OK) {
@@ -441,10 +441,10 @@ int archive_order(sqlite3* database, const order* archived_order) {
   return insert_archive(database, archived_order);
 }
 
-void getArchivedOrders(sqlite3* database, int userID, order** orders_out,
-                       int* count_out) {
+void get_archived_orders(sqlite3* database, int user_id, order** orders_out,
+                         int* count_out) {
   int result =
-      get_user_archived_orders(database, userID, orders_out, count_out);
+      get_user_archived_orders(database, user_id, orders_out, count_out);
   if (result != SQLITE_OK) {
     fprintf(
         stderr,
@@ -455,7 +455,7 @@ void getArchivedOrders(sqlite3* database, int userID, order** orders_out,
   }
 }
 
-int cancelOrder(sqlite3* database, int orderID, int currentUserID) {
+int cancel_order(sqlite3* database, int orderID, int currentUserID) {
   order ord;
   if (get_order(database, orderID, &ord) != 0) {
     fprintf(stderr, "Error: Failed to retrieve order with ID %d.\n", orderID);
