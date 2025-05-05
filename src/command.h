@@ -147,8 +147,8 @@ int sell(sqlite3* database, order* ord);
  * @param orderCount Pointer to an integer to store the number of retrieved
  * orders.
  */
-void myOrders(sqlite3* database, int userID, order** orderList,
-              int* orderCount);
+void my_orders(sqlite3* database, int userID, order** orderList,
+               int* orderCount);
 
 /**
  * @brief Retrieves and displays all buy and sell orders for a specific item.

@@ -390,8 +390,8 @@ int sell(sqlite3* database, order* ord) {
   return 0;
 }
 
-void myOrders(sqlite3* database, int userID, order** orderList,
-              int* orderCount) {
+void my_orders(sqlite3* database, int userID, order** orderList,
+               int* orderCount) {
   int result = get_user_all_orders(database, userID, orderList, orderCount);
   if (result != SQLITE_OK) {
     fprintf(stderr,

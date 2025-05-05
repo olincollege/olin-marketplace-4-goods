@@ -404,7 +404,7 @@ static void handle_my_orders(FILE* comm_file, int userID, sqlite3* database) {
   order* order_list = NULL;
   int order_count = 0;
 
-  myOrders(database, userID, &order_list, &order_count);
+  my_orders(database, userID, &order_list, &order_count);
 
   if (fputs("Open Orders:\r\n", comm_file) == EOF) {
     error_and_exit("Couldn't send message");
