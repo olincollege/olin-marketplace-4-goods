@@ -245,3 +245,20 @@ void getArchivedOrders(sqlite3* database, int userID, order** orders_out,
  * itself.
  */
 int free_order_list(order* orderList, int orderCount);
+
+/**
+ * @brief Cancels an order in the database and updates the user's balance
+ * accordingly.
+ *
+ * This function retrieves the specified order and its associated user from the
+ * database. Depending on whether the order is a buy or sell order, it adjusts
+ * the user's balance by refunding the appropriate amount or returning the
+ * quantity of the item to the user. After updating the user's balance, the
+ * order is deleted from the database.
+ *
+ * @param database A pointer to the SQLite database connection.
+ * @param orderID The ID of the order to be canceled.
+ * @return 0 on success, or -1 if an error occurs (e.g., failure to retrieve
+ * order/user, update user balance, or delete the order).
+ */
+int cancelOrder(sqlite3* database, int orderID);
