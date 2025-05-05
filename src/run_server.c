@@ -40,7 +40,7 @@ int main(void) {
   listen_for_connections(server);
   int accept_status = 0;
   while (accept_status != -1) {
-    accept_status = accept_client(server, userID, db_ptr);
+    accept_status = accept_client(server, db_ptr);
   }
   free_echo_server(server);
   return 0;

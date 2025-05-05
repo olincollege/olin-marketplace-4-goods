@@ -180,10 +180,11 @@ Test(test_command_db, test_partial_match_sell_and_buy) {
       .ETH = 50,
   };
 
-  res = insert_user(database, &buyer);
+  int user_id = 0;
+  res = insert_user(database, &buyer, &user_id);
   cr_assert_eq(res, 0, "Expected insert_user to return 0, but got %d", res);
 
-  res = insert_user(database, &seller);
+  res = insert_user(database, &seller, &user_id);
   cr_assert_eq(res, 0, "Expected insert_user to return 0, but got %d", res);
 
   // Buyer places a buy order for 10 units

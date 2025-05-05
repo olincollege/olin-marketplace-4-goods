@@ -71,3 +71,22 @@ struct sockaddr_in socket_address(in_addr_t addr, in_port_t port);
  * @return A pointer to the array of strings.
  */
 string_array* tokenize_line(const char* line);
+
+/**
+ * @brief Formats a string using a printf-style format and returns it as a
+ * dynamically allocated string.
+ *
+ * This function takes a format string and a variable number of arguments,
+ * formats them using the specified format, and returns the resulting string.
+ * The returned string is dynamically allocated and must be freed by the caller
+ * to avoid memory leaks.
+ *
+ * @param format The printf-style format string.
+ * @param ... Additional arguments to format the string.
+ * @return A pointer to the dynamically allocated formatted string, or NULL if
+ * an error occurs.
+ *
+ * @note The caller is responsible for freeing the returned string using
+ * `free()`.
+ */
+char* fprintf_to_string(const char* format, ...);

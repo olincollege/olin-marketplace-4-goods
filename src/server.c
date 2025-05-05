@@ -48,7 +48,7 @@ void listen_for_connections(echo_server* server) {
   }
 }
 
-int accept_client(echo_server* server, int userID, sqlite3* database) {
+int accept_client(echo_server* server, sqlite3* database) {
   struct sockaddr_storage client_addr;
   unsigned int address_size = sizeof(client_addr);
   int connect_d = accept4(server->listener, (struct sockaddr*)&client_addr,
@@ -284,11 +284,12 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
         (void)fflush(comm_file);
         continue;
       }
+
       (void)fprintf(comm_file, "Your current inventory:\r\n");
-      (void)fprintf(comm_file, "OMG: %.2f\r\n", current_user.OMG);
-      (void)fprintf(comm_file, "DOGE: %.2f\r\n", current_user.DOGE);
-      (void)fprintf(comm_file, "ETH: %.2f\r\n", current_user.ETH);
-      (void)fprintf(comm_file, "BTC: %.2f\r\n", current_user.BTC);
+      (void)fprintf(comm_file, "OMG: %d\r\n", current_user.OMG);
+      (void)fprintf(comm_file, "DOGE: %d\r\n", current_user.DOGE);
+      (void)fprintf(comm_file, "ETH: %d\r\n", current_user.ETH);
+      (void)fprintf(comm_file, "BTC: %d\r\n", current_user.BTC);
       (void)fflush(comm_file);
 
     } else if (strcasecmp(command_tokens->strings[0], "buy") == 0) {
@@ -359,6 +360,80 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
       // Handle "cancelOrder" command
     } else if (strcasecmp(command_tokens->strings[0], "view") == 0) {
       // Handle "view" command
+      int item = -1;
+
+      if (strcasecmp(command_tokens->strings[1], "omg") == 0) {
+        item = COIN_OMG;
+      } else if (strcasecmp(command_tokens->strings[1], "doge") == 0) {
+        item = COIN_DOGE;
+      } else if (strcasecmp(command_tokens->strings[1], "btc") == 0) {
+        item = COIN_BTC;
+      } else if (strcasecmp(command_tokens->strings[1], "eth") == 0) {
+        item = COIN_ETH;
+      } else {
+        if (fputs("Invalid item type\r\n", comm_file) == EOF) {
+          error_and_exit("Couldn't send error message");
+        }
+        (void)fflush(comm_file);
+      }
+
+      order* buy_orders = NULL;
+      int buy_count = 0;
+      order* sell_orders = NULL;
+      int sell_count = 0;
+
+      viewItemOrders(database, item, &buy_orders, &buy_count, &sell_orders,
+                     &sell_count);
+
+      // Print header and separator
+      if (fprintf(comm_file,
+                  "-------------------------------------------\r\n") < 0) {
+        error_and_exit("Couldn't send header");
+      }
+      if (fprintf(comm_file, "%-30s | %s\r\n", "Buy Orders", "Sell Orders") <
+          0) {
+        error_and_exit("Couldn't send header");
+      }
+
+      // Determine maximum number of rows needed
+      int max_rows = (buy_count > sell_count) ? buy_count : sell_count;
+
+      // Print each row
+      for (int i = 0; i < max_rows; i++) {
+        // Print buy order info if available
+        if (i < buy_count) {
+          if (fprintf(comm_file, "%-30s",
+                      fprintf_to_string("price: %.2f, quantity: %d",
+                                        buy_orders[i].unitPrice,
+                                        buy_orders[i].quantity)) < 0) {
+            error_and_exit("Couldn't send buy order info");
+          }
+        } else {
+          // Print empty space if no buy order for this row
+          if (fprintf(comm_file, "%-30s", "") < 0) {
+            error_and_exit("Couldn't send spacing");
+          }
+        }
+
+        // Print separator
+        if (fprintf(comm_file, " | ") < 0) {
+          error_and_exit("Couldn't send separator");
+        }
+
+        // Print sell order info if available
+        if (i < sell_count) {
+          if (fprintf(comm_file, "price: %.2f, quantity: %d",
+                      sell_orders[i].unitPrice, sell_orders[i].quantity) < 0) {
+            error_and_exit("Couldn't send sell order info");
+          }
+        }
+
+        // End the row
+        if (fprintf(comm_file, "\r\n") < 0) {
+          error_and_exit("Couldn't send newline");
+        }
+      }
+
     } else {
       // Handle unknown command
       if (fputs("Invalid syntax!\r\n", comm_file) == EOF) {
