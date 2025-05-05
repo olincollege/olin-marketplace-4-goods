@@ -296,7 +296,7 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
       // Handle buy
       order* buy_order = create_order_from_string(command_tokens, userID);
       if (buy(database, buy_order) == -1) {
-        if (fputs("Can't create buy order!", comm_file) == EOF) {
+        if (fputs("Can't create buy order!\r\n", comm_file) == EOF) {
           error_and_exit("Couldn't send line");
         }
       } else {
@@ -309,7 +309,7 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
     } else if (strcasecmp(command_tokens->strings[0], "sell") == 0) {
       order* sell_order = create_order_from_string(command_tokens, userID);
       if (sell(database, sell_order) == -1) {
-        if (fputs("Can't create sell order!", comm_file) == EOF) {
+        if (fputs("Can't create sell order!\r\n", comm_file) == EOF) {
           error_and_exit("Couldn't send line");
         }
       } else {
@@ -358,6 +358,36 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
 
     } else if (strcasecmp(command_tokens->strings[0], "cancelOrder") == 0) {
       // Handle "cancelOrder" command
+      if (command_tokens->size != 2) {
+        if (fputs("Invalid command syntax! Usage: cancelOrder <orderID>\r\n",
+                  comm_file) == EOF) {
+          error_and_exit("Couldn't send error message");
+        }
+        (void)fflush(comm_file);
+        continue;
+      }
+      char* endptr = NULL;
+      int orderID = strtol(command_tokens->strings[1], &endptr, 10);
+      if (*endptr != '\0') {
+        if (fputs("Invalid order ID format!\r\n", comm_file) == EOF) {
+          error_and_exit("Couldn't send error message");
+        }
+        (void)fflush(comm_file);
+        continue;
+      }
+
+      if (cancelOrder(database, orderID, userID) != 0) {
+        if (fputs("Failed to cancel order!\r\n", comm_file) == EOF) {
+          error_and_exit("Couldn't send error message");
+        }
+        (void)fflush(comm_file);
+      } else {
+        if (fputs("Successfully cancelled order!\r\n", comm_file) == EOF) {
+          error_and_exit("Couldn't send success message");
+        }
+        (void)fflush(comm_file);
+      }
+
     } else if (strcasecmp(command_tokens->strings[0], "view") == 0) {
       // Handle "view" command
       int item = -1;
