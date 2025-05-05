@@ -79,14 +79,16 @@ The platform currently only supports 3 types of online commodities as listed bel
 
 Stores the inventories and info of all users.
 
-| Column | Type    | Description                      |
-| ------ | ------- | -------------------------------- |
-| userID | INTEGER | Primary key, auto-incremented    |
-| name   | TEXT    | Name of the user                 |
-| OMG    | INTEGER | Quantity of OMG coin (default 0) |
-| DOGE   | INTEGER | Quantity of Coin A (default 0)   |
-| BTC    | INTEGER | Quantity of BTC coin (default 0) |
-| ETH    | INTEGER | Quantity of ETH coin (default 0) |
+| Column   | Type    | Description                       |
+| -------- | ------- | --------------------------------- |
+| userID   | INTEGER | Primary key, auto-incremented     |
+| username | TEXT    | Unique username of the user       |
+| password | TEXT    | Password of the user              |
+| name     | TEXT    | Name of the user                  |
+| OMG      | INTEGER | Quantity of OMG coin (default 0)  |
+| DOGE     | INTEGER | Quantity of DOGE coin (default 0) |
+| BTC      | INTEGER | Quantity of BTC coin (default 0)  |
+| ETH      | INTEGER | Quantity of ETH coin (default 0)  |
 
 ## Table 2 - `orders`
 

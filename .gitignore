@@ -52,3 +52,7 @@ Mkfile.old
 dkms.conf
 
 build/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
