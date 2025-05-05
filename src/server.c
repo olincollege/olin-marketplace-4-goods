@@ -48,7 +48,7 @@ void listen_for_connections(echo_server* server) {
   }
 }
 
-int accept_client(echo_server* server, int userID, sqlite3* database) {
+int accept_client(echo_server* server, sqlite3* database) {
   struct sockaddr_storage client_addr;
   unsigned int address_size = sizeof(client_addr);
   int connect_d = accept4(server->listener, (struct sockaddr*)&client_addr,
@@ -284,11 +284,12 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
         (void)fflush(comm_file);
         continue;
       }
+
       (void)fprintf(comm_file, "Your current inventory:\r\n");
-      (void)fprintf(comm_file, "OMG: %.2f\r\n", current_user.OMG);
-      (void)fprintf(comm_file, "DOGE: %.2f\r\n", current_user.DOGE);
-      (void)fprintf(comm_file, "ETH: %.2f\r\n", current_user.ETH);
-      (void)fprintf(comm_file, "BTC: %.2f\r\n", current_user.BTC);
+      (void)fprintf(comm_file, "OMG: %d\r\n", current_user.OMG);
+      (void)fprintf(comm_file, "DOGE: %d\r\n", current_user.DOGE);
+      (void)fprintf(comm_file, "ETH: %d\r\n", current_user.ETH);
+      (void)fprintf(comm_file, "BTC: %d\r\n", current_user.BTC);
       (void)fflush(comm_file);
 
     } else if (strcasecmp(command_tokens->strings[0], "buy") == 0) {
@@ -359,6 +360,12 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
       // Handle "cancelOrder" command
     } else if (strcasecmp(command_tokens->strings[0], "view") == 0) {
       // Handle "view" command
+
+      order* buy_orders = NULL;
+      int buy_count = 0;
+      order* sell_orders = NULL;
+      int sell_count = 0;
+
     } else {
       // Handle unknown command
       if (fputs("Invalid syntax!\r\n", comm_file) == EOF) {
