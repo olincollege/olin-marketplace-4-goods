@@ -59,9 +59,41 @@ sqlite3 --version
 
 To run Olin Marketplace for Goods:
 
-Navigate to `src/` and build the project. The user should then run the executable `run_server` in the 
+The user should first build the project, then run the executable `run_server` in the
 `build/src` directory, and the server should start. From there, end users can simply use telnet to connect
 to the server that needs to be on local network. The default port is 4242.
+
+For example, to build and access OMG on a local machine:
+
+```bash
+# Assuming in OMG root directory
+cd build/
+cmake ..
+cmake --build .
+```
+
+After successfully building the project,
+
+```bash
+cd src/
+./run_server
+```
+
+At this point the server should start. One thing to note is the SQLite database is configured to initialize
+everytime the server starts, meaning the database will lose its contents in between server shutoff and restart.
+To disable this feature, the user needs to comment out the following code in `run_server.c`:
+
+```c
+if (init_db(db_ptr) == -1) {
+   error_and_exit("Can't initialize database!");
+}
+```
+
+Lastly, to access the server on a local machine:
+
+```bash
+telnet 127.0.0.1 4242
+```
 
 ## Features
 

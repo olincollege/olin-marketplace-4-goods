@@ -310,7 +310,7 @@ void echo(FILE* comm_file, int userID, sqlite3* database) {
       handle_view(comm_file, userID, database, command_tokens);
     } else if (strcasecmp(command_tokens->strings[0], "help") == 0) {
       // Handles help command
-      handle_view(comm_file, userID, database, command_tokens);
+      handle_help(comm_file);
     } else {
       // Handle unknown command
       if (fputs("Invalid syntax! Try help. \r\n", comm_file) == EOF) {
@@ -363,7 +363,7 @@ static void handle_my_inventory(FILE* comm_file, int userID,
 // Handle the buy command
 static void handle_buy(FILE* comm_file, int userID, sqlite3* database,
                        string_array* command_tokens) {
-  if (validate_command_args(comm_file, command_tokens, 4) != 0) {
+  if (validate_command_args(comm_file, command_tokens, 4) != 1) {
     return;
   }
 
@@ -383,7 +383,7 @@ static void handle_buy(FILE* comm_file, int userID, sqlite3* database,
 // Handle the sell command
 static void handle_sell(FILE* comm_file, int userID, sqlite3* database,
                         string_array* command_tokens) {
-  if (validate_command_args(comm_file, command_tokens, 4) != 0) {
+  if (validate_command_args(comm_file, command_tokens, 4) != 1) {
     return;
   }
   order* sell_order = create_order_from_string(command_tokens, userID);
@@ -421,9 +421,6 @@ static void handle_my_orders(FILE* comm_file, int userID, sqlite3* database) {
                   order_list[i].orderID) == -1) {
         puts("Error sending order!");
       }
-      if (fputs("------------------------------------\r\n", comm_file) == EOF) {
-        error_and_exit("Couldn't send message");
-      }
     }
     (void)fflush(comm_file);
     free(order_list);
@@ -435,6 +432,10 @@ static void handle_my_orders(FILE* comm_file, int userID, sqlite3* database) {
       error_and_exit("Couldn't send message");
     }
     (void)fflush(comm_file);
+  }
+
+  if (fputs("------------------------------------\r\n", comm_file) == EOF) {
+    error_and_exit("Couldn't send message");
   }
 
   order_list = NULL;
@@ -471,7 +472,7 @@ static void handle_my_orders(FILE* comm_file, int userID, sqlite3* database) {
 // Handle the cancelOrder command
 static void handle_cancel_order(FILE* comm_file, int userID, sqlite3* database,
                                 string_array* command_tokens) {
-  if (validate_command_args(comm_file, command_tokens, 2) != 0) {
+  if (validate_command_args(comm_file, command_tokens, 2) != 1) {
     return;
   }
 
@@ -500,7 +501,7 @@ static void handle_cancel_order(FILE* comm_file, int userID, sqlite3* database,
 // Handle the view command
 static void handle_view(FILE* comm_file, int userID, sqlite3* database,
                         string_array* command_tokens) {
-  if (validate_command_args(comm_file, command_tokens, 2) != 0) {
+  if (validate_command_args(comm_file, command_tokens, 2) != 1) {
     return;
   }
 
