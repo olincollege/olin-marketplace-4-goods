@@ -2,6 +2,7 @@
 #include <stdio.h>      // fprintf
 
 #include "client.h"
+#include "command.h"
 #include "util.h"
 
 const socklen_t MAX_IP_ADDR_LEN = 16;

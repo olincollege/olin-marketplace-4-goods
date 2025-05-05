@@ -1,6 +1,9 @@
 #pragma once
 
 #include <netinet/in.h>
+#include <pthread.h>
+#include <sqlite3.h>
+#include <stdio.h>
 #include <sys/socket.h>
 
 enum { BACKLOG_SIZE = 10 };
@@ -68,18 +71,78 @@ void listen_for_connections(echo_server* server);
  * @param server The server to accept the connection on.
  * @return 0 for the parent process and -1 for the child (echo) process.
  */
-int accept_client(echo_server* server);
+int accept_client(echo_server* server, sqlite3* database);
 
 /**
- * Read and echo lines from a client socket until the end of the file.
+ * @brief Registers a new user by interacting with the client through a
+ * communication file and storing the user's information in the database.
  *
- * Given a socket descriptor corresponding to to a connected client, read lines
- * from the given socket, echoing them back on the same socket as each line is
- * read. Continue this process until the client sends an EOF marker or until an
- * error is encountered. Upon EOF, close the file and exit. Upon an error at
- * any point, print an error message and terminate the program, in which case
- * the function does not return.
+ * This function prompts the user for a username, display name, and password via
+ * the provided communication file. It then validates and processes the input,
+ * and registers the user in the database with default cryptocurrency balances.
+ * If successful, the function returns the newly created user's ID.
  *
- * @param socket_descriptor The socket descriptor for the client connection.
+ * @param comm_file A pointer to a FILE object used for communication with the
+ * client. This is typically a socket or file stream for sending and receiving
+ * data.
+ * @param database  A pointer to an SQLite3 database connection where the user
+ * information will be stored.
+ *
+ * @return The ID of the newly registered user on success, or -1 if an error
+ * occurs during the registration process.
+ *
+ * @note The function will terminate the program if it encounters a critical
+ * error, such as being unable to send prompts or read input from the
+ * communication file.
+ *
+ * @warning The function assumes that the communication file and database
+ * connection are valid and properly initialized. It also assumes that the
+ * database schema supports the `insert_user` function for adding new users.
  */
-void echo(int socket_descriptor);
+int register_user(FILE* comm_file, sqlite3* database);
+
+/**
+ * Handle client communication by echoing messages and interacting with the
+ * database.
+ *
+ * This function manages communication with a connected client through a socket.
+ * It reads messages from the client, processes them, and sends appropriate
+ * responses back to the client. The function also interacts with a SQLite
+ * database to perform operations based on the client's requests. The
+ * communication continues until the client disconnects or an error occurs.
+ *
+ * @param comm_file A file stream associated with the socket connection to the
+ * client.
+ * @param userID The unique identifier of the authenticated user.
+ * @param database A pointer to the SQLite database connection for handling
+ * client requests.
+ *
+ * @note The function ensures proper cleanup of resources, such as closing the
+ * file stream, before returning or exiting. Critical errors, such as socket
+ * communication failures or database access issues, will result in program
+ * termination.
+ */
+void echo(FILE* comm_file, int userID, sqlite3* database);
+
+/**
+ * Handles user authentication by communicating over a socket connection.
+ *
+ * This function facilitates user authentication by interacting with a client
+ * through a socket. It requests a username and password from the client and
+ * verifies the credentials against a SQLite database. If the credentials are
+ * valid, the user is authenticated, and a success message is sent back to the
+ * client. If the credentials are invalid, the client is prompted to retry.
+ *
+ * @param comm_file A file stream associated with the socket connection to the
+ * client.
+ * @param database A pointer to the SQLite database connection used for
+ * verifying user credentials.
+ * @return Returns 0 (EXIT_SUCCESS) if authentication is successful. The
+ * function terminates the program on critical errors.
+ *
+ * @note The function ensures that any dynamically allocated memory for the
+ * username and password is properly freed before returning or exiting.
+ * @note Critical errors, such as socket communication failures or database
+ * access issues, will result in program termination.
+ */
+int authenticate(FILE* comm_file, sqlite3* database);

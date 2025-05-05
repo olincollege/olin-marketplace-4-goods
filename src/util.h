@@ -4,9 +4,12 @@
 #include <stdint.h>       // uint16_t, uint32_t
 #include <stdnoreturn.h>  // noreturn
 
+#include "string_array.h"
+
 // The port number that the server listens on. Include it here because both the
 // client and the server need this value.
 extern const uint16_t PORT;
+extern const size_t INITIAL_TOKENS_CAPACITY;
 
 /**
  * Print an error message and exit with a failure status code.
@@ -55,3 +58,35 @@ void close_tcp_socket(int socket_descriptor);
  * @return A sockaddr_in structure to use with bind/connect, in network order.
  */
 struct sockaddr_in socket_address(in_addr_t addr, in_port_t port);
+
+/**
+ * Split a line of input into tokens.
+ *
+ * Given a line of null-terminated input, split a string by whitespace into
+ * tokens. The original line is not changed, and new memory is dynamically
+ * allocated for the array of strings. The caller is responsible for cleaning up
+ * the memory allocated by this function.
+ *
+ * @param line A line of input.
+ * @return A pointer to the array of strings.
+ */
+string_array* tokenize_line(const char* line);
+
+/**
+ * @brief Formats a string using a printf-style format and returns it as a
+ * dynamically allocated string.
+ *
+ * This function takes a format string and a variable number of arguments,
+ * formats them using the specified format, and returns the resulting string.
+ * The returned string is dynamically allocated and must be freed by the caller
+ * to avoid memory leaks.
+ *
+ * @param format The printf-style format string.
+ * @param ... Additional arguments to format the string.
+ * @return A pointer to the dynamically allocated formatted string, or NULL if
+ * an error occurs.
+ *
+ * @note The caller is responsible for freeing the returned string using
+ * `free()`.
+ */
+char* fprintf_to_string(const char* format, ...);
