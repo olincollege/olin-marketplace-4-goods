@@ -487,7 +487,7 @@ int get_item_all_orders(sqlite3* database, int item, order** buy_orders_out,
       "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, "
       "created_at "
       "FROM orders WHERE item = ? AND buyOrSell = 1 "
-      "ORDER BY unitPrice DESC LIMIT 5;";
+      "ORDER BY unitPrice ASC LIMIT 5;";
 
   sqlite3_stmt* stmt = NULL;
   int res;

@@ -71,7 +71,7 @@ void listen_for_connections(echo_server* server);
  * @param server The server to accept the connection on.
  * @return 0 for the parent process and -1 for the child (echo) process.
  */
-int accept_client(echo_server* server, int userID, sqlite3* database);
+int accept_client(echo_server* server, sqlite3* database);
 
 /**
  * @brief Registers a new user by interacting with the client through a
