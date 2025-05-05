@@ -103,12 +103,54 @@ int drop_all_tables(sqlite3* database) {
 }
 
 int insert_order(sqlite3* database, order* new_order) {
+  // Retrieve user to check balance
+  user updated_user;
+  int res = get_user(database, new_order->userID, &updated_user);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to retrieve user for balance check: %s\n",
+            sqlite3_errmsg(database));
+    return res;
+  }
+
+  // Check if the user has sufficient balance for the order
+  if (new_order->buyOrSell == 0) {  // Buy order
+    int cost = new_order->quantity * new_order->unitPrice;
+    if (updated_user.OMG < cost) {
+      fprintf(stderr, "Insufficient OMG balance for buy order.\n");
+      return SQLITE_ERROR;
+    }
+  } else if (new_order->buyOrSell == 1) {  // Sell order
+    switch (new_order->item) {
+      case 1:  // DOGE
+        if (updated_user.DOGE < new_order->quantity) {
+          fprintf(stderr, "Insufficient DOGE balance for sell order.\n");
+          return SQLITE_ERROR;
+        }
+        break;
+      case 2:  // BTC
+        if (updated_user.BTC < new_order->quantity) {
+          fprintf(stderr, "Insufficient BTC balance for sell order.\n");
+          return SQLITE_ERROR;
+        }
+        break;
+      case 3:  // ETH
+        if (updated_user.ETH < new_order->quantity) {
+          fprintf(stderr, "Insufficient ETH balance for sell order.\n");
+          return SQLITE_ERROR;
+        }
+        break;
+      default:
+        fprintf(stderr, "Unknown item type: %d\n", new_order->item);
+        return SQLITE_ERROR;
+    }
+  }
+  // Insert the order into the database
   const char* sql =
       "INSERT INTO orders (item, buyOrSell, quantity, unitPrice, userID) "
       "VALUES (?, ?, ?, ?, ?);";
 
   sqlite3_stmt* stmt = NULL;
-  int res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  res = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
   if (res != SQLITE_OK) {
     fprintf(stderr, "Failed to prepare statement: %s\n",
             sqlite3_errmsg(database));
@@ -124,6 +166,32 @@ int insert_order(sqlite3* database, order* new_order) {
   res = sqlite3_step(stmt);
   if (res != SQLITE_DONE) {
     fprintf(stderr, "Failed to execute statement: %s\n",
+            sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return res;
+  }
+
+  // Update user balance based on the order type
+  if (new_order->buyOrSell == 0) {  // Buy order
+    int cost = new_order->quantity * new_order->unitPrice;
+    updated_user.OMG -= cost;
+  } else if (new_order->buyOrSell == 1) {  // Sell order
+    switch (new_order->item) {
+      case 1:  // DOGE
+        updated_user.DOGE -= new_order->quantity;
+        break;
+      case 2:  // BTC
+        updated_user.BTC -= new_order->quantity;
+        break;
+      case 3:  // ETH
+        updated_user.ETH -= new_order->quantity;
+        break;
+    }
+  }
+
+  res = update_user_balance(database, &updated_user);
+  if (res != SQLITE_OK) {
+    fprintf(stderr, "Failed to update user balance: %s\n",
             sqlite3_errmsg(database));
     sqlite3_finalize(stmt);
     return res;
@@ -419,7 +487,7 @@ int get_item_all_orders(sqlite3* database, int item, order** buy_orders_out,
       "SELECT orderID, item, buyOrSell, quantity, unitPrice, userID, "
       "created_at "
       "FROM orders WHERE item = ? AND buyOrSell = 1 "
-      "ORDER BY unitPrice DESC LIMIT 5;";
+      "ORDER BY unitPrice ASC LIMIT 5;";
 
   sqlite3_stmt* stmt = NULL;
   int res;

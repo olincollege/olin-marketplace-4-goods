@@ -456,3 +456,51 @@ void getArchivedOrders(sqlite3* database, int userID, order** orders_out,
     *count_out = 0;
   }
 }
+
+int cancelOrder(sqlite3* database, int orderID, int currentUserID) {
+  order ord;
+  if (get_order(database, orderID, &ord) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve order with ID %d.\n", orderID);
+    return -1;
+  }
+
+  // Verify that the order belongs to the current user
+  if (ord.userID != currentUserID) {
+    fprintf(stderr, "Error: Unauthorized attempt to cancel order with ID %d.\n",
+            orderID);
+    return -1;
+  }
+
+  user usr;
+  if (get_user(database, ord.userID, &usr) != 0) {
+    fprintf(stderr, "Error: Failed to retrieve user information.\n");
+    return -1;
+  }
+
+  if (ord.buyOrSell == 0) {  // Buy order
+    double refund_amount = ord.quantity * ord.unitPrice;
+    usr.OMG += refund_amount;
+  } else {  // Sell order
+    if (ord.item == COIN_OMG) {
+      usr.OMG += ord.quantity;
+    } else if (ord.item == COIN_DOGE) {
+      usr.DOGE += ord.quantity;
+    } else if (ord.item == COIN_BTC) {
+      usr.BTC += ord.quantity;
+    } else if (ord.item == COIN_ETH) {
+      usr.ETH += ord.quantity;
+    }
+  }
+
+  if (update_user_balance(database, &usr) != 0) {
+    fprintf(stderr, "Error: Failed to update user balance.\n");
+    return -1;
+  }
+
+  if (delete_order(database, orderID) != 0) {
+    fprintf(stderr, "Error: Failed to delete order with ID %d.\n", orderID);
+    return -1;
+  }
+
+  return 0;
+}
