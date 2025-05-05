@@ -24,7 +24,7 @@ typedef enum {
 } CoinType;
 
 typedef enum {
-  DEFAULT_OMG = 100,
+  DEFAULT_OMG = 10000,
   DEFAULT_DOGE = 200,
   DEFAULT_BTC = 50,
   DEFAULT_ETH = 75

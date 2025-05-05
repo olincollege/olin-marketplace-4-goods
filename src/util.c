@@ -7,6 +7,8 @@
 #include <stdlib.h>  // exit, EXIT_FAILURE
 #include <unistd.h>  // close
 
+#include "db.h"
+
 const uint16_t PORT = 4242;
 const size_t INITIAL_TOKENS_CAPACITY = 4;
 
@@ -71,4 +73,31 @@ char* fprintf_to_string(const char* format, ...) {
   va_end(args);
 
   return result;
+}
+
+const char* coin_type_to_string(int coin_type) {
+  switch (coin_type) {
+    case COIN_DOGE:
+      return "DOGE";
+    case COIN_BTC:
+      return "BTC";
+    case COIN_ETH:
+      return "ETH";
+    case COIN_OMG:
+      return "OMG";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+int validate_command_args(FILE* comm_file, string_array* command_tokens,
+                          int expected_count) {
+  if (command_tokens->size != expected_count) {
+    if (fputs("Invalid command syntax! Try help.", comm_file) == EOF) {
+      error_and_exit("Couldn't send error message");
+    }
+    (void)fflush(comm_file);
+    return 0;
+  }
+  return 1;
 }

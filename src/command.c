@@ -41,8 +41,6 @@ int close_db(sqlite3* database) {
   return 0;  // Return 0 on success
 }
 
-int myInventory(int userID, user** cur_user) { return -1; }
-
 order* create_order_from_string(string_array* params, int userID) {
   order* new_order = (order*)malloc(sizeof(order));
   if (new_order == NULL) {

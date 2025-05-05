@@ -2,6 +2,7 @@
 
 #include <netinet/in.h>   // port, struct sockaddr_in, in_addr_t, in_port_t
 #include <stdint.h>       // uint16_t, uint32_t
+#include <stdio.h>        // FILE
 #include <stdnoreturn.h>  // noreturn
 
 #include "string_array.h"
@@ -90,3 +91,34 @@ string_array* tokenize_line(const char* line);
  * `free()`.
  */
 char* fprintf_to_string(const char* format, ...);
+
+/**
+ * Converts a coin type identifier to its corresponding string representation.
+ *
+ * @param coin_type An integer representing the coin type. Expected values are:
+ *                  - COIN_DOGE: Represents Dogecoin.
+ *                  - COIN_BTC: Represents Bitcoin.
+ *                  - COIN_ETH: Represents Ethereum.
+ *                  - COIN_OMG: Represents OmiseGO.
+ *
+ * @return A constant string representing the coin type:
+ *         - "DOGE" for COIN_DOGE
+ *         - "BTC" for COIN_BTC
+ *         - "ETH" for COIN_ETH
+ *         - "OMG" for COIN_OMG
+ *         - "UNKNOWN" for any unrecognized coin type
+ */
+const char* coin_type_to_string(int coin_type);
+
+/**
+ * @brief Validates command arguments and sends an error message if invalid
+ *
+ * @param comm_file File stream for client communication
+ * @param command_tokens Tokenized command line
+ * @param expected_count Expected number of arguments (including command)
+ * @param usage_message The usage message to display if validation fails
+ *
+ * @return 1 if validation passes, 0 if it fails
+ */
+int validate_command_args(FILE* comm_file, string_array* command_tokens,
+                          int expected_count);
